@@ -1,0 +1,11 @@
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\bin\Debug\netcoreapp2.0\HomeWallet_API.deps.json
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\bin\Debug\netcoreapp2.0\HomeWallet_API.runtimeconfig.json
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\bin\Debug\netcoreapp2.0\HomeWallet_API.runtimeconfig.dev.json
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\bin\Debug\netcoreapp2.0\HomeWallet_API.dll
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\obj\Debug\netcoreapp2.0\HomeWallet_API.csproj.CoreCompileInputs.cache
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\obj\Debug\netcoreapp2.0\HomeWallet_API.AssemblyInfoInputs.cache
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\obj\Debug\netcoreapp2.0\HomeWallet_API.AssemblyInfo.cs
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\bin\Debug\netcoreapp2.0\HomeWallet_API.pdb
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\obj\Debug\netcoreapp2.0\HomeWallet_API.csprojResolveAssemblyReference.cache
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\obj\Debug\netcoreapp2.0\HomeWallet_API.dll
+D:\HomeWallet\Project\API\HomeWallet_API\HomeWallet_API\obj\Debug\netcoreapp2.0\HomeWallet_API.pdb
