@@ -10,9 +10,9 @@ namespace HomeWallet_API.Models
         public int ID { get; set; }
         public DateTime PurchaseDate { get; set; }
         public int ShopID { get; set; }
-        public string UserID { get; set; }
+        public int UserID { get; set; }
 
-        public ApplicationUser User { get; set; }
+        public User User { get; set; }
         public Shop Shop { get; set; }
         public ICollection<ReceiptProduct> ReceiptProducts { get; set; }
     }

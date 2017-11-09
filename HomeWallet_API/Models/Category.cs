@@ -9,8 +9,8 @@ namespace HomeWallet_API.Models
     {
         public int ID { get; set; }
         public string Name { get; set; }
-        public string UserID { get; set; }
-        public virtual ApplicationUser User { get; set; }
+        public int UserID { get; set; }
+        public virtual User User { get; set; }
         public virtual ICollection<ProductCategory> ProductCategories { get; set; }
     }
 }

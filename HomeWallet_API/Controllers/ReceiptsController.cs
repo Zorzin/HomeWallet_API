@@ -20,16 +20,16 @@ namespace HomeWallet_API.Controllers
             _context = context;
         }
 
-        // GET: api/Receipts
-        [HttpGet]
-        public IEnumerable<Receipt> GetReceipts(string userId)
+        // GET: api/Receipts/userid
+        [HttpGet("{userId}")]
+        public IEnumerable<Receipt> GetReceipts(int userId)
         {
             return _context.Receipts.Where(r=>r.UserID == userId).OrderBy(r=>r.PurchaseDate);
         }
 
-        // GET: api/Receipts/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetReceipt(string userId,[FromRoute] int id)
+        // GET: api/Receipts/userid/5
+        [HttpGet("{userId}/{id}")]
+        public async Task<IActionResult> GetReceipt(int userId,[FromRoute] int id)
         {
             if (!ModelState.IsValid)
             {

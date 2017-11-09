@@ -26,9 +26,9 @@ namespace HomeWallet_API
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
-
+            services.AddCors();
             services.AddDbContext<DBContext>(options =>
-                    options.UseSqlServer(Configuration.GetConnectionString("DBContext")));
+                    options.UseNpgsql(Configuration.GetConnectionString("DBContext")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -38,7 +38,8 @@ namespace HomeWallet_API
             {
                 app.UseDeveloperExceptionPage();
             }
-
+            app.UseCors(builder =>
+                builder.WithOrigins("http://localhost:4200").AllowAnyHeader());
             app.UseMvc();
         }
     }
