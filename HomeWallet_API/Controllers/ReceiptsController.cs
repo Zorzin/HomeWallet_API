@@ -20,6 +20,21 @@ namespace HomeWallet_API.Controllers
             _context = context;
         }
 
+
+        // GET: api/Receipts/userId/totalValue/id
+        [HttpGet("{userId}/totalValue/{id}")]
+        public double GetReceiptTotalValue(int userId, int id)
+        {
+            var receipt = _context.Receipts.Include(r=>r.ReceiptProducts).SingleOrDefaultAsync(r => r.UserID == userId && r.ID == id);
+            double total=0;
+
+            foreach (var receiptProduct in receipt.Result.ReceiptProducts)
+            {
+                total += (receiptProduct.Price * receiptProduct.Amount);
+            }
+            return total;
+        }
+
         // GET: api/Receipts/userid
         [HttpGet("{userId}")]
         public IEnumerable<Receipt> GetReceipts(int userId)
