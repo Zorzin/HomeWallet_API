@@ -39,7 +39,7 @@ namespace HomeWallet_API
                 app.UseDeveloperExceptionPage();
             }
             app.UseCors(builder =>
-                builder.WithOrigins("http://localhost:4200").AllowAnyHeader());
+                builder.WithOrigins("http://localhost:4200").AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
             app.UseMvc();
         }
     }

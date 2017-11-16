@@ -12,5 +12,16 @@ namespace HomeWallet_API.Models
         public int UserID { get; set; }
         public virtual User User { get; set; }
         public ICollection<Receipt> Receipts { get; set; }
+
+        public Shop()
+        {
+            
+        }
+
+        public Shop(string Name, int UserID)
+        {
+            this.Name = Name;
+            this.UserID = UserID;
+        }
     }
 }

@@ -82,18 +82,19 @@ namespace HomeWallet_API.Controllers
         }
 
         // POST: api/Shops
-        [HttpPost]
-        public async Task<IActionResult> PostShop([FromBody] Shop shop)
+        [HttpPost("{userId}")]
+        public async Task PostShop(int userId, [FromBody] string name)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            Console.WriteLine("New name: "+name);
+            //if (!ModelState.IsValid)
+            //{
+            //    return BadRequest(ModelState);
+            //}
 
-            _context.Shops.Add(shop);
+            var shop = _context.Shops.Add(new Shop(name,userId));
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetShop", new { id = shop.ID }, shop);
+            //return CreatedAtAction("GetShop", userId,new {id = shop.Entity.ID });
         }
 
         // DELETE: api/Shops/5
