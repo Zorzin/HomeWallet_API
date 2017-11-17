@@ -81,19 +81,31 @@ namespace HomeWallet_API.Controllers
             return NoContent();
         }
 
-        // POST: api/Products
-        [HttpPost]
-        public async Task<IActionResult> PostProduct([FromBody] Product product)
+        // POST: api/Products/1
+        [HttpPost("{userId}")]
+        public async Task<int> PostProduct(int userId, [FromBody] ProductPost postProduct)
         {
-            if (!ModelState.IsValid)
+            var product = new Product
             {
-                return BadRequest(ModelState);
-            }
-
+                Name = postProduct.name,
+                UserID = userId
+            };
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetProduct", new { id = product.ID }, product);
+            foreach (var category in postProduct.categories)
+            {
+                var productCategory = new ProductCategory
+                {
+                    CategoryID = category,
+                    ProductID = product.ID
+                };
+                _context.ProductCategories.Add(productCategory);
+            }
+            await _context.SaveChangesAsync();
+
+
+            return product.ID;
         }
 
         // DELETE: api/Products/5

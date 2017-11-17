@@ -21,22 +21,22 @@ namespace HomeWallet_API.Controllers
         }
 
         // GET: api/Categories
-        [HttpGet]
-        public IEnumerable<Category> GetCategories()
+        [HttpGet("{userId}")]
+        public IEnumerable<Category> GetCategories(int userId)
         {
-            return _context.Categories;
+            return _context.Categories.Where(c=>c.UserID == userId);
         }
 
         // GET: api/Categories/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetCategory([FromRoute] int id)
+        [HttpGet("{userId}/{id}")]
+        public async Task<IActionResult> GetCategory(int userId, [FromRoute] int id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var category = await _context.Categories.SingleOrDefaultAsync(m => m.ID == id);
+            var category = await _context.Categories.SingleOrDefaultAsync(m => m.ID == id && m.UserID == userId);
 
             if (category == null)
             {

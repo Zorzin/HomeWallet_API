@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Models\" />
     <Folder Include="AngularModels\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
