@@ -99,18 +99,35 @@ namespace HomeWallet_API.Controllers
         }
 
         // POST: api/Receipts
-        [HttpPost]
-        public async Task<IActionResult> PostReceipt([FromBody] Receipt receipt)
+        [HttpPost("{userId}")]
+        public async Task<IActionResult> PostReceipt(int userId, [FromBody] ReceiptPost receipt)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            _context.Receipts.Add(receipt);
+            var receiptObject = new Receipt();
+            receiptObject.UserID = userId;
+            receiptObject.ShopID = receipt.ShopId;
+            receiptObject.PurchaseDate = DateTime.Parse(receipt.Date);
+            _context.Receipts.Add(receiptObject);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetReceipt", new { id = receipt.ID }, receipt);
+            foreach (var product in receipt.Products)
+            {
+                _context.ReceiptProducts.Add(new ReceiptProduct()
+                {
+                    Amount = product.Amount,
+                    Price =  product.Price,
+                    ProductID = product.ProductId,
+                    ReceiptID = receiptObject.ID
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
 
         // DELETE: api/Receipts/5
