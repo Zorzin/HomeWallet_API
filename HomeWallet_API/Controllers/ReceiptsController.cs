@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HomeWallet_API.Logic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +40,7 @@ namespace HomeWallet_API.Controllers
         [HttpGet("{userId}")]
         public IEnumerable<Receipt> GetReceipts(int userId)
         {
-            return _context.Receipts.Where(r=>r.UserID == userId).OrderBy(r=>r.PurchaseDate);
+            return _context.Receipts.Where(r=>r.UserID == userId).OrderByDescending(r=>r.PurchaseDate);
         }
 
         // GET: api/Receipts/userid/5
@@ -60,8 +61,6 @@ namespace HomeWallet_API.Controllers
 
             return Ok(receipt);
         }
-
-        //TODO: all below
 
         // PUT: api/Receipts/5
         [HttpPut("{id}")]
@@ -107,39 +106,42 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var receiptObject = new Receipt();
-            receiptObject.UserID = userId;
-            receiptObject.ShopID = receipt.ShopId;
-            receiptObject.PurchaseDate = DateTime.Parse(receipt.Date);
-            _context.Receipts.Add(receiptObject);
-            await _context.SaveChangesAsync();
-
-            foreach (var product in receipt.Products)
-            {
-                _context.ReceiptProducts.Add(new ReceiptProduct()
-                {
-                    Amount = product.Amount,
-                    Price =  product.Price,
-                    ProductID = product.ProductId,
-                    ReceiptID = receiptObject.ID
-                });
-            }
-
-            await _context.SaveChangesAsync();
+            var tempReceipt = CreateProduct.CreateReceipt(receipt.ShopId, userId, DateTime.Parse(receipt.Date), _context);
+            CreateProduct.CreateReceiptProducts(receipt.Products, tempReceipt.ID, _context);
 
             return Ok();
         }
 
-        // DELETE: api/Receipts/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteReceipt([FromRoute] int id)
+        // POST: api/Receipts
+        [HttpPost("cyclical/{userId}")]
+        public async Task<IActionResult> PostReceiptCyclical(int userId, [FromBody] ReceiptCyclicalPost receipt)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var receipt = await _context.Receipts.SingleOrDefaultAsync(m => m.ID == id);
+            var start =DateTime.Parse(receipt.StartDate);
+            while (start <= DateTime.Parse(receipt.EndDate))
+            {
+                var tempReceipt = CreateProduct.CreateReceipt(receipt.ShopId, userId, start, _context);
+                CreateProduct.CreateReceiptProducts(receipt.Products, tempReceipt.ID, _context);
+                start = start.AddDays(receipt.Cycle);
+            }
+
+            return Ok();
+        }
+
+        // DELETE: api/Receipts/1/5
+        [HttpDelete("{userId}/{id}")]
+        public async Task<IActionResult> DeleteReceipt(int userId, [FromRoute] int id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var receipt = await _context.Receipts.SingleOrDefaultAsync(m => m.ID == id && m.UserID==userId);
             if (receipt == null)
             {
                 return NotFound();
