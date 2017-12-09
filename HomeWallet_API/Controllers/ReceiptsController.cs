@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HomeWallet_API.Models;
+using HomeWallet_API.Models.POST;
 
 namespace HomeWallet_API.Controllers
 {
