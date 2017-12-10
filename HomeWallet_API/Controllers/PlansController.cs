@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HomeWallet_API.Models;
 using HomeWallet_API.Models.POST;
+using Microsoft.Azure.KeyVault.Models;
 
 namespace HomeWallet_API.Controllers
 {
@@ -42,6 +43,26 @@ namespace HomeWallet_API.Controllers
             if (plan == null)
             {
                 return NotFound();
+            }
+
+            return Ok(plan);
+        }
+
+        // GET: api/Plans/1/19-08-2017
+        [HttpGet("{userId}/{date}")]
+        public async Task<IActionResult> GetPlanForDate([FromRoute] int userId, string date)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var searchingDate = DateTime.Parse(date);
+            var plan = await _context.Plans.FirstOrDefaultAsync(m => m.UserID == userId && m.StartDate <= searchingDate && m.EndDate >= searchingDate);
+
+            if (plan == null)
+            {
+                return Ok(null);
             }
 
             return Ok(plan);
@@ -91,16 +112,23 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var plan = new Plan()
+            try
             {
-                Amount = planPost.Amount,
-                EndDate = DateTime.Parse(planPost.StartDate),
-                StartDate = DateTime.Parse(planPost.EndDate),
-                UserID = userId
-            };
+                var plan = new Plan()
+                {
+                    Amount = planPost.Amount,
+                    EndDate = DateTime.Parse(planPost.EndDate),
+                    StartDate = DateTime.Parse(planPost.StartDate),
+                    UserID = userId
+                };
 
-            _context.Plans.Add(plan);
-            await _context.SaveChangesAsync();
+                _context.Plans.Add(plan);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                return BadRequest();
+            }
 
             return Ok();
         }
