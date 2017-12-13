@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HomeWallet_API.Logic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +45,25 @@ namespace HomeWallet_API.Controllers
             }
 
             return Ok(product);
+        }
+
+        // GET: api/Products/categories/1/5
+        [HttpGet("categories/{userId}/{id}")]
+        public async Task<IActionResult> GetProductCategories(int userId, [FromRoute] int id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var categories = ProductHelper.GetCategories(_context,userId,id);
+
+            if (categories == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(categories);
         }
 
         // PUT: api/Products/5
@@ -109,15 +129,15 @@ namespace HomeWallet_API.Controllers
         }
 
         // DELETE: api/Products/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct([FromRoute] int id)
+        [HttpDelete("{userId}/{id}")]
+        public async Task<IActionResult> DeleteProduct(int userId,[FromRoute] int id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var product = await _context.Products.SingleOrDefaultAsync(m => m.ID == id);
+            var product = await _context.Products.SingleOrDefaultAsync(m => m.ID == id && m.UserID == userId);
             if (product == null)
             {
                 return NotFound();
