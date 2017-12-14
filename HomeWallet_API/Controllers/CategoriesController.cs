@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HomeWallet_API.Logic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -27,7 +28,7 @@ namespace HomeWallet_API.Controllers
             return _context.Categories.Where(c=>c.UserID == userId);
         }
 
-        // GET: api/Categories/5
+        // GET: api/Categories/5/1
         [HttpGet("{userId}/{id}")]
         public async Task<IActionResult> GetCategory(int userId, [FromRoute] int id)
         {
@@ -46,21 +47,36 @@ namespace HomeWallet_API.Controllers
             return Ok(category);
         }
 
-        // PUT: api/Categories/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutCategory([FromRoute] int id, [FromBody] Category category)
+        // GET: api/Categories/products/5/1
+        [HttpGet("products/{userId}/{id}")]
+        public async Task<IActionResult> GetCategoryProducts(int userId, [FromRoute] int id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (id != category.ID)
+            var products = CategoryHelper.GetCategoryProducts(id, userId, _context);
+
+            if (products == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(category).State = EntityState.Modified;
+            return Ok(products);
+        }
+
+        // PUT: api/Categories/1/5/name
+        [HttpPut("{userId}/{id}/{name}")]
+        public async Task<IActionResult> PutCategory([FromRoute] int userId,[FromRoute] int id, [FromRoute] string name)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var category = _context.Categories.FirstOrDefault(c => c.UserID == userId && c.ID == id);
+            category.Name = name;
 
             try
             {
@@ -81,31 +97,36 @@ namespace HomeWallet_API.Controllers
             return NoContent();
         }
 
-        // POST: api/Categories
-        [HttpPost]
-        public async Task<IActionResult> PostCategory([FromBody] Category category)
+        // POST: api/Categories/1/name
+        [HttpPost("{userId}/{name}")]
+        public async Task<IActionResult> PostCategory(int userId,string name)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+            var category = new Category()
+            {
+                Name = name,
+                UserID = userId
 
+            };
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetCategory", new { id = category.ID }, category);
+            return Ok(category);
         }
 
-        // DELETE: api/Categories/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCategory([FromRoute] int id)
+        // DELETE: api/Categories/1/5
+        [HttpDelete("{userId}/{id}")]
+        public async Task<IActionResult> DeleteCategory([FromRoute] int userId,[FromRoute] int id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var category = await _context.Categories.SingleOrDefaultAsync(m => m.ID == id);
+            var category = await _context.Categories.SingleOrDefaultAsync(m => m.ID == id && m.UserID == userId);
             if (category == null)
             {
                 return NotFound();

@@ -66,21 +66,16 @@ namespace HomeWallet_API.Controllers
             return Ok(categories);
         }
 
-        // PUT: api/Products/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct([FromRoute] int id, [FromBody] Product product)
+        // PUT: api/Products/1/5
+        [HttpPut("{userId}/{id}")]
+        public async Task<IActionResult> PutProduct([FromRoute] int userId, [FromRoute] int id, [FromBody] ProductPost product)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (id != product.ID)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(product).State = EntityState.Modified;
+            ProductHelper.UpdateProduct(_context,userId,id,product);
 
             try
             {
