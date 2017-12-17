@@ -7,11 +7,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomeWallet_API.Logic
 {
-    public class CategoryHelper
+    public class CategoryHelper : ICategoryHelper
     {
-        public static List<Product> GetCategoryProducts(int categoryId, int userId, DBContext context)
+        private readonly DBContext _context;
+
+        public CategoryHelper(DBContext context)
         {
-            var category = context.Categories
+            _context = context;
+        }
+
+        public List<Product> GetCategoryProducts(int categoryId, int userId)
+        {
+            var category = _context.Categories
                 .Include(c=>c.ProductCategories)
                 .ThenInclude(p => p.Product)
                 .SingleOrDefault(m => m.ID == categoryId);
@@ -20,19 +27,23 @@ namespace HomeWallet_API.Logic
                 return null;
             }
             var products = new List<Product>();
-            var productsID = new List<int>();
+            var productsId = new List<int>();
             foreach (var productCategory in category.ProductCategories)
             {
-                if (!productsID.Contains(productCategory.ProductID))
+                if (!productsId.Contains(productCategory.ProductID))
                 {
-                    productsID.Add(productCategory.ProductID);
+                    productsId.Add(productCategory.ProductID);
                     products.Add(productCategory.Product);
                     productCategory.Product.ProductCategories = null;
                 }
             }
-
             return products;
         }
 
+    }
+
+    public interface ICategoryHelper
+    {
+        List<Product> GetCategoryProducts(int categoryId, int userId);
     }
 }

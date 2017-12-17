@@ -7,10 +7,71 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomeWallet_API.Logic
 {
-    public class ProductHelper
+    public class ProductHelper : IProductHelper
     {
+        private readonly DBContext _context;
 
-        public static List<Category> GetCategories(DBContext _context, int userId, int id)
+        public ProductHelper(DBContext context)
+        {
+            _context = context;
+        }
+
+        public void CreateProductCategories(ICollection<int> categories, int productID)
+        {
+            foreach (var category in categories)
+            {
+                var productcategory = new ProductCategory()
+                {
+                    ProductID = productID,
+                    CategoryID = category
+                };
+                _context.ProductCategories.Add(productcategory);
+                _context.SaveChanges();
+            }
+        }
+
+        public void CreateReceiptProducts(ICollection<ReceiptProductPost> products, int receiptId)
+        {
+            foreach (var product in products)
+            {
+                var receiptproduct = new ReceiptProduct()
+                {
+                    ReceiptID = receiptId,
+                    ProductID = product.ProductId,
+                    Amount = product.Amount,
+                    Price = product.Price
+                };
+                _context.ReceiptProducts.Add(receiptproduct);
+                _context.SaveChanges();
+            }
+        }
+
+        public Receipt CreateReceipt(int shopID, int userID, DateTime date)
+        {
+            var receipt = new Receipt()
+            {
+                ShopID = shopID,
+                UserID = userID,
+                PurchaseDate = date
+            };
+            _context.Receipts.Add(receipt);
+            _context.SaveChanges();
+            return receipt;
+        }
+
+        public Product Create(string name, int userid)
+        {
+            var product = new Product()
+            {
+                Name = name,
+                UserID = userid
+            };
+            _context.Products.Add(product);
+            _context.SaveChanges();
+            return product;
+        }
+
+        public List<Category> GetCategories(int userId, int id)
         {
             var product = _context.Products
                 .Include(p=>p.ProductCategories)
@@ -28,17 +89,17 @@ namespace HomeWallet_API.Logic
             return categories;
         }
 
-        public static void UpdateProduct(DBContext _context, int userId, int id, ProductPost product)
+        public void UpdateProduct(int userId, int id, ProductPost product)
         {
             var productObj = _context.Products.FirstOrDefault(p => p.ID == id && p.UserID == userId);
 
             productObj.Name = product.name;
             _context.SaveChanges();
-            DeleteOldCategories(_context, productObj);
-            AddNewCategories(_context, productObj, product.categories);
+            DeleteOldCategories(productObj);
+            AddNewCategories(productObj, product.categories);
         }
 
-        private static void AddNewCategories(DBContext _context, Product productObj, int[] productCategories)
+        private void AddNewCategories(Product productObj, int[] productCategories)
         {
             foreach (var category in productCategories)
             {
@@ -51,7 +112,7 @@ namespace HomeWallet_API.Logic
             _context.SaveChanges();
         }
 
-        private static void DeleteOldCategories(DBContext _context, Product productObj)
+        private void DeleteOldCategories(Product productObj)
         {
             var productCategories = _context.ProductCategories.Where(p => p.ProductID == productObj.ID).ToList();
             for (int i = productCategories.Count()-1; i >= 0; i--)
@@ -61,5 +122,16 @@ namespace HomeWallet_API.Logic
             }
             _context.SaveChanges();
         }
+    }
+
+    public interface IProductHelper
+    {
+        void CreateProductCategories(ICollection<int> categories, int productID);
+        void CreateReceiptProducts(ICollection<ReceiptProductPost> products, int receiptId);
+        Receipt CreateReceipt(int shopID, int userID, DateTime date);
+        Product Create(string name, int userid);
+        List<Category> GetCategories(int userId, int id);
+        void UpdateProduct(int userId, int id, ProductPost product);
+
     }
 }

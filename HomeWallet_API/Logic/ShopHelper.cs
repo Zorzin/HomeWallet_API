@@ -7,12 +7,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomeWallet_API.Logic
 {
-    public class ShopHelper
+    public class ShopHelper : IShopHelper
     {
-
-        public static List<Product> GetShopProducts(int shopId, int userId, DBContext context)
+        private readonly DBContext _context;
+        public ShopHelper(DBContext context)
         {
-            var shop = context.Shops
+            _context = context;
+        }
+
+        public List<Product> GetShopProducts(int shopId, int userId)
+        {
+            var shop = _context.Shops
                 .Include(s => s.Receipts)
                 .ThenInclude(r => r.ReceiptProducts)
                 .ThenInclude(rp => rp.Product)
@@ -22,21 +27,24 @@ namespace HomeWallet_API.Logic
                 return null;
             }
             var products = new List<Product>();
-            var productsID = new List<int>();
+            var productsId = new List<int>();
             foreach (var shopReceipt in shop.Receipts)
             {
                 foreach (var shopReceiptReceiptProduct in shopReceipt.ReceiptProducts)
                 {
-                    if (!productsID.Contains(shopReceiptReceiptProduct.ProductID))
+                    if (!productsId.Contains(shopReceiptReceiptProduct.ProductID))
                     {
-                        productsID.Add(shopReceiptReceiptProduct.ProductID);
+                        productsId.Add(shopReceiptReceiptProduct.ProductID);
                         products.Add(shopReceiptReceiptProduct.Product);
                     }
                 }
             }
-
             return products;
         }
+    }
 
+    public interface IShopHelper
+    {
+        List<Product> GetShopProducts(int shopId, int userId);
     }
 }

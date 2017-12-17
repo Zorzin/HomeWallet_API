@@ -15,10 +15,12 @@ namespace HomeWallet_API.Controllers
     public class CategoriesController : Controller
     {
         private readonly DBContext _context;
+        private ICategoryHelper _categoryHelper;
 
-        public CategoriesController(DBContext context)
+        public CategoriesController(DBContext context, ICategoryHelper categoryHelper)
         {
             _context = context;
+            _categoryHelper = categoryHelper;
         }
 
         // GET: api/Categories
@@ -56,7 +58,7 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var products = CategoryHelper.GetCategoryProducts(id, userId, _context);
+            var products = _categoryHelper.GetCategoryProducts(id, userId);
 
             if (products == null)
             {

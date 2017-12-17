@@ -15,10 +15,12 @@ namespace HomeWallet_API.Controllers
     public class ShopsController : Controller
     {
         private readonly DBContext _context;
+        private IShopHelper _shopHelper;
 
-        public ShopsController(DBContext context)
+        public ShopsController(DBContext context, IShopHelper shopHelper)
         {
             _context = context;
+            _shopHelper = shopHelper;
         }
 
         // GET: api/Shops/1
@@ -56,7 +58,7 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var products = ShopHelper.GetShopProducts(id, userId, _context);
+            var products = _shopHelper.GetShopProducts(id, userId);
             
             if (products == null)
             {

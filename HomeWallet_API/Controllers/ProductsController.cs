@@ -15,10 +15,12 @@ namespace HomeWallet_API.Controllers
     public class ProductsController : Controller
     {
         private readonly DBContext _context;
+        private IProductHelper _productHelper;
 
-        public ProductsController(DBContext context)
+        public ProductsController(DBContext context, IProductHelper productHelper)
         {
             _context = context;
+            _productHelper = productHelper;
         }
 
         // GET: api/Products/1
@@ -56,7 +58,7 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var categories = ProductHelper.GetCategories(_context,userId,id);
+            var categories = _productHelper.GetCategories(userId,id);
 
             if (categories == null)
             {
@@ -75,7 +77,7 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            ProductHelper.UpdateProduct(_context,userId,id,product);
+            _productHelper.UpdateProduct(userId,id,product);
 
             try
             {

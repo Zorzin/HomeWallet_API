@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HomeWallet_API.Models;
 using HomeWallet_API.Models.POST;
+using HomeWallet_API.Models.PUT;
 
 namespace HomeWallet_API.Controllers
 {
@@ -16,10 +17,14 @@ namespace HomeWallet_API.Controllers
     public class ReceiptsController : Controller
     {
         private readonly DBContext _context;
+        private readonly IReceiptHelper _receiptHelper;
+        private readonly IProductHelper _productHelper;
 
-        public ReceiptsController(DBContext context)
+        public ReceiptsController(DBContext context, IReceiptHelper receiptHelper, IProductHelper productHelper)
         {
             _context = context;
+            _receiptHelper = receiptHelper;
+            _productHelper = productHelper;
         }
 
 
@@ -64,20 +69,15 @@ namespace HomeWallet_API.Controllers
         }
 
         // PUT: api/Receipts/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutReceipt([FromRoute] int id, [FromBody] Receipt receipt)
+        [HttpPut("{userId}/{id}")]
+        public async Task<IActionResult> PutReceipt([FromRoute] int userId, [FromRoute] int id, [FromBody] ReceiptEdit receiptEdit)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (id != receipt.ID)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(receipt).State = EntityState.Modified;
+            _receiptHelper.UpdateReceipt(userId,id,receiptEdit);
 
             try
             {
@@ -107,8 +107,8 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var tempReceipt = CreateProduct.CreateReceipt(receipt.ShopId, userId, DateTime.Parse(receipt.Date), _context);
-            CreateProduct.CreateReceiptProducts(receipt.Products, tempReceipt.ID, _context);
+            var tempReceipt = _productHelper.CreateReceipt(receipt.ShopId, userId, DateTime.Parse(receipt.Date));
+            _productHelper.CreateReceiptProducts(receipt.Products, tempReceipt.ID);
 
             return Ok();
         }
@@ -125,8 +125,8 @@ namespace HomeWallet_API.Controllers
             var start =DateTime.Parse(receipt.StartDate);
             while (start <= DateTime.Parse(receipt.EndDate))
             {
-                var tempReceipt = CreateProduct.CreateReceipt(receipt.ShopId, userId, start, _context);
-                CreateProduct.CreateReceiptProducts(receipt.Products, tempReceipt.ID, _context);
+                var tempReceipt = _productHelper.CreateReceipt(receipt.ShopId, userId, start);
+                _productHelper.CreateReceiptProducts(receipt.Products, tempReceipt.ID);
                 start = start.AddDays(receipt.Cycle);
             }
 

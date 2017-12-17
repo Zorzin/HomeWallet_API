@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HomeWallet_API.Logic;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +30,10 @@ namespace HomeWallet_API
             services.AddCors();
             services.AddDbContext<DBContext>(options =>
                     options.UseNpgsql(Configuration.GetConnectionString("DBContext")));
+            services.AddScoped<IReceiptHelper, ReceiptHelper>();
+            services.AddScoped<IShopHelper, ShopHelper>();
+            services.AddScoped<IProductHelper, ProductHelper>();
+            services.AddScoped<ICategoryHelper, CategoryHelper>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
