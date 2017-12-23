@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using HomeWallet_API.Logic;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HomeWallet_API.Models;
 using HomeWallet_API.Models.POST;
+using HomeWallet_API.Models.PUT;
 using Microsoft.Azure.KeyVault.Models;
 
 namespace HomeWallet_API.Controllers
@@ -16,50 +18,51 @@ namespace HomeWallet_API.Controllers
     public class PlansController : Controller
     {
         private readonly DBContext _context;
+        private IPlanHelper _planHelper;
 
-        public PlansController(DBContext context)
+        public PlansController(DBContext context, IPlanHelper planHelper)
         {
             _context = context;
+            _planHelper = planHelper;
         }
 
-        // GET: api/Plans
-        [HttpGet]
-        public IEnumerable<Plan> GetPlans()
+        // GET: api/Plans/1
+        [HttpGet("{userId}")]
+        public IEnumerable<Plan> GetPlans([FromRoute] int userId)
         {
-            return _context.Plans;
+            return _context.Plans.Where(p=>p.UserID == userId).OrderByDescending(p=>p.StartDate);
         }
 
-        // GET: api/Plans/5
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetPlan([FromRoute] int id)
+        // GET: api/Plans/1/2
+        [HttpGet("details/{userId}/{id}")]
+        public async Task<IActionResult> GetPlanWithDetails([FromRoute] int userId, [FromRoute]int id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var plan = await _context.Plans.SingleOrDefaultAsync(m => m.ID == id);
+            var plan = await _planHelper.GetPlan(userId, id);
+            var planDetails = _planHelper.GetPlanDetails(plan);
 
-            if (plan == null)
+            if (planDetails == null)
             {
                 return NotFound();
             }
 
-            return Ok(plan);
+            return Ok(planDetails);
         }
 
         // GET: api/Plans/1/19-08-2017
         [HttpGet("{userId}/{date}")]
-        public async Task<IActionResult> GetPlanForDate([FromRoute] int userId, string date)
+        public async Task<IActionResult> GetPlanForDate([FromRoute] int userId, [FromRoute]string date)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var searchingDate = DateTime.Parse(date);
-            var plan = await _context.Plans.FirstOrDefaultAsync(m => m.UserID == userId && m.StartDate <= searchingDate && m.EndDate >= searchingDate);
-
+            var plan = await _planHelper.GetPlanForDate(userId,date);
             if (plan == null)
             {
                 return Ok(null);
@@ -68,21 +71,49 @@ namespace HomeWallet_API.Controllers
             return Ok(plan);
         }
 
-        // PUT: api/Plans/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutPlan([FromRoute] int id, [FromBody] Plan plan)
+        // GET: api/Plans/id/1/2
+        [HttpGet("id/{userId}/{id}")]
+        public async Task<IActionResult> GetPlanById([FromRoute] int userId, [FromRoute]int id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (id != plan.ID)
+            var plan = await _planHelper.GetPlan(userId, id);
+            if (plan == null)
+            {
+                return Ok(null);
+            }
+
+            return Ok(plan);
+        }
+
+        // PUT: api/Plans/1/5
+        [HttpPut("{userId}/{id}")]
+        public async Task<IActionResult> PutPlan([FromRoute] int userId, [FromRoute] int id, [FromBody] PlanEdit planEdit)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var currentPlan = _planHelper.GetPlanForDate(userId, DateTime.Today.ToString());
+            var plan = _planHelper.GetPlan(userId, id).Result;
+
+            if (plan == null)
+            {
+                return NotFound();
+            }
+
+            if (id != plan.ID || userId != plan.UserID || plan.ID != currentPlan.Result.ID)
             {
                 return BadRequest();
             }
 
-            _context.Entry(plan).State = EntityState.Modified;
+            plan.Amount = planEdit.Amount;
+            plan.StartDate = DateTime.Parse(planEdit.StartDate);
+            plan.EndDate = DateTime.Parse(planEdit.EndDate);
 
             try
             {
@@ -133,17 +164,24 @@ namespace HomeWallet_API.Controllers
             return Ok();
         }
 
-        // DELETE: api/Plans/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePlan([FromRoute] int id)
+        // DELETE: api/Plans/1/5
+        [HttpDelete("{userId}/{id}")]
+        public async Task<IActionResult> DeletePlan([FromRoute] int userId,[FromRoute] int id)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var plan = await _context.Plans.SingleOrDefaultAsync(m => m.ID == id);
+            var plan = await _context.Plans.SingleOrDefaultAsync(m => m.ID == id && m.UserID == userId);
             if (plan == null)
+            {
+                return NotFound();
+            }
+
+            var currentPlan = _planHelper.GetPlanForDate(userId, DateTime.Today.ToString());
+
+            if (plan.ID != currentPlan.Result.ID)
             {
                 return NotFound();
             }
