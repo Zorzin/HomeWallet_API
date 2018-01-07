@@ -88,6 +88,25 @@ namespace HomeWallet_API.Controllers
             return Ok(dbUser.Id);
         }
 
+        // GET: api/Users/currency
+        [HttpGet("currency/{userId}")]
+        public async Task<IActionResult> GetCurrency([FromRoute] int userId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (dbUser == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok(dbUser.Currency);
+        }
+
         // POST: api/Users/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLogin user)
