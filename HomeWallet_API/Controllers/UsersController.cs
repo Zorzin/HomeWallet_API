@@ -107,6 +107,28 @@ namespace HomeWallet_API.Controllers
             return Ok(dbUser.Currency);
         }
 
+        // Post: api/Users/currency
+        [HttpPost("currency/{userId}/{value}")]
+        public async Task<IActionResult> SetCurrency([FromRoute] int userId,[FromRoute] string value)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (dbUser == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            dbUser.Currency = value;
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
         // POST: api/Users/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLogin user)
