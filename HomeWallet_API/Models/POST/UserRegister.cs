@@ -12,5 +12,7 @@ namespace HomeWallet_API.Models.POST
         public string RePassword { get; set; }
         public string Email { get; set; }
         public string Currency { get; set; }
+        public string Theme { get; set; }
+        public string Language { get; set; }
     }
 }

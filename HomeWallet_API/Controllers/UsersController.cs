@@ -80,7 +80,9 @@ namespace HomeWallet_API.Controllers
                 Currency = user.Currency,
                 Email = user.Email,
                 Nick = user.Login,
-                Password = user.Password
+                Password = user.Password,
+                Theme = user.Theme,
+                Language = user.Language
             };
             _context.Users.Add(dbUser);
             await _context.SaveChangesAsync();
@@ -107,6 +109,44 @@ namespace HomeWallet_API.Controllers
             return Ok(dbUser.Currency);
         }
 
+        // GET: api/Users/theme
+        [HttpGet("theme/{userId}")]
+        public async Task<IActionResult> GetTheme([FromRoute] int userId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (dbUser == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok(dbUser.Theme);
+        }
+
+        // GET: api/Users/language
+        [HttpGet("language/{userId}")]
+        public async Task<IActionResult> GetLanguage([FromRoute] int userId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (dbUser == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok(dbUser.Language);
+        }
+
         // Post: api/Users/currency
         [HttpPost("currency/{userId}/{value}")]
         public async Task<IActionResult> SetCurrency([FromRoute] int userId,[FromRoute] string value)
@@ -124,6 +164,50 @@ namespace HomeWallet_API.Controllers
             }
 
             dbUser.Currency = value;
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        // Post: api/Users/language
+        [HttpPost("language/{userId}/{value}")]
+        public async Task<IActionResult> SetLanguage([FromRoute] int userId, [FromRoute] string value)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (dbUser == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            dbUser.Language = value;
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        // Post: api/Users/theme
+        [HttpPost("theme/{userId}/{value}")]
+        public async Task<IActionResult> SetTheme([FromRoute] int userId, [FromRoute] string value)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (dbUser == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            dbUser.Theme = value;
             await _context.SaveChangesAsync();
 
             return Ok();

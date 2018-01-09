@@ -8,11 +8,12 @@ namespace HomeWallet_API.Models
 {
     public class User
     {
-
         public int Id { get; set; }
         public string Email { get; set; }
         public string Nick { get; set; }
         public string Password { get; set; }
         public string Currency { get; set; }
+        public string Language { get; set; }
+        public string Theme { get; set; }
     }
 }
