@@ -95,30 +95,38 @@ namespace HomeWallet_API.Logic
 
             productObj.Name = product.name;
             _context.SaveChanges();
-            DeleteOldCategories(productObj);
+            DeleteOldCategories(productObj, product.categories);
             AddNewCategories(productObj, product.categories);
         }
 
         private void AddNewCategories(Product productObj, int[] productCategories)
         {
+            var dbCategories = _context.ProductCategories.Where(p => p.ProductID == productObj.ID).Select(p=>p.CategoryID).ToList();
             foreach (var category in productCategories)
             {
-                _context.ProductCategories.Add(new ProductCategory()
+                if (!dbCategories.Contains(category))
                 {
-                    CategoryID = category,
-                    ProductID = productObj.ID
-                });
+                    _context.ProductCategories.Add(new ProductCategory()
+                    {
+                        CategoryID = category,
+                        ProductID = productObj.ID
+                    });
+                }
             }
             _context.SaveChanges();
         }
 
-        private void DeleteOldCategories(Product productObj)
+        private void DeleteOldCategories(Product productObj, int[] productCategories)
         {
-            var productCategories = _context.ProductCategories.Where(p => p.ProductID == productObj.ID).ToList();
-            for (int i = productCategories.Count()-1; i >= 0; i--)
+            var dbCategories = _context.ProductCategories.Where(p => p.ProductID == productObj.ID).ToList();
+
+            for (var i = dbCategories.Count()-1; i >= 0; i--)
             {
-                var pc = productCategories.ElementAt(i);
-                _context.ProductCategories.Remove(pc);
+                var pc = dbCategories.ElementAt(i);
+                if (!productCategories.Contains(pc.CategoryID))
+                {
+                    _context.ProductCategories.Remove(pc);
+                }
             }
             _context.SaveChanges();
         }
