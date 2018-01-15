@@ -85,10 +85,12 @@ namespace HomeWallet_API.Controllers
 
         // POST: api/Shops
         [HttpPost("{userId}")]
-        public async Task PostShop(int userId, [FromBody] string name)
+        public async Task<IActionResult> PostShop(int userId, [FromBody] string name)
         {
-            _context.Shops.Add(new Shop(name,userId));
+            var shop = new Shop(name, userId);
+            _context.Shops.Add(shop);
             await _context.SaveChangesAsync();
+            return Ok(shop.ID);
         }
 
         // DELETE: api/Shops/1/5
