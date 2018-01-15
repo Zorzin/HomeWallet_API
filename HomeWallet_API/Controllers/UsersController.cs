@@ -20,7 +20,43 @@ namespace HomeWallet_API.Controllers
         {
             _context = context;
         }
+        // GET: api/Users/
+        [HttpGet()]
+        public async Task<IActionResult> GetLogins()
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
+            var dbUserLogins = _context.Users.Select(u => u.Nick);
+
+            if (!dbUserLogins.Any())
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok(dbUserLogins);
+        }
+
+        // GET: api/Users/emails
+        [HttpGet("emails")]
+        public async Task<IActionResult> GetEmails()
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var dbUserEmails = _context.Users.Select(u=>u.Email);
+
+            if (!dbUserEmails.Any())
+            {
+                return BadRequest(ModelState);
+            }
+
+            return Ok(dbUserEmails);
+        }
         // PUT: api/Users/5
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUser([FromRoute] int id, [FromBody] User user)
