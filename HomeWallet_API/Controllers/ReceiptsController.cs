@@ -44,9 +44,16 @@ namespace HomeWallet_API.Controllers
 
         // GET: api/Receipts/userid
         [HttpGet("{userId}")]
-        public IEnumerable<Receipt> GetReceipts(int userId)
+        public IEnumerable<Receipt> GetReceiptsUntilToday(int userId)
         {
-            return _context.Receipts.Where(r=>r.UserID == userId).OrderByDescending(r=>r.PurchaseDate);
+            return _context.Receipts.Where(r=>r.UserID == userId && r.PurchaseDate <= DateTime.Today).OrderByDescending(r=>r.PurchaseDate);
+        }
+
+        // GET: api/Receipts/all/userid
+        [HttpGet("all/{userId}")]
+        public IEnumerable<Receipt> GetAllReceipts(int userId)
+        {
+            return _context.Receipts.Where(r => r.UserID == userId).OrderByDescending(r => r.PurchaseDate);
         }
 
         // GET: api/Receipts/userid/5

@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using HomeWallet_API.Models;
+using Newtonsoft.Json;
 
 namespace HomeWallet_API
 {
@@ -26,7 +27,10 @@ namespace HomeWallet_API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
+            services.AddMvc().AddJsonOptions(options =>
+            {
+                options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
+            });
             services.AddCors();
             services.AddDbContext<DBContext>(options =>
                     options.UseNpgsql(Configuration.GetConnectionString("DBContext")));
