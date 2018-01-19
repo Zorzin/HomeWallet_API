@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HomeWallet_API.Models;
 using HomeWallet_API.Models.POST;
+using Microsoft.AspNetCore.Identity;
 
 namespace HomeWallet_API.Controllers
 {
@@ -15,7 +16,6 @@ namespace HomeWallet_API.Controllers
     public class UsersController : Controller
     {
         private readonly DBContext _context;
-
         public UsersController(DBContext context)
         {
             _context = context;
@@ -111,15 +111,16 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
+            PasswordHasher<User> hasher = new PasswordHasher<User>();
             var dbUser = new User()
             {
                 Currency = user.Currency,
                 Email = user.Email,
                 Nick = user.Login,
-                Password = user.Password,
                 Theme = user.Theme,
                 Language = user.Language
             };
+            dbUser.Password = hasher.HashPassword(dbUser, user.Password);
             _context.Users.Add(dbUser);
             await _context.SaveChangesAsync();
 
@@ -258,14 +259,21 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Nick == user.Login && u.Password == user.Password);
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Nick == user.Login);
 
             if (dbUser == null)
             {
                 return BadRequest(ModelState);
             }
+            PasswordHasher<User> hasher = new PasswordHasher<User>();
+            var result = hasher.VerifyHashedPassword(dbUser, dbUser.Password, user.Password);
+            if (result == PasswordVerificationResult.Success)
+            {
+                return Ok(dbUser.Id);
+            }
 
-            return Ok(dbUser.Id);
+            return BadRequest(ModelState);
+
         }
 
         // POST: api/Users/password
@@ -289,12 +297,14 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (dbUser.Password != user.OldPassword)
+            PasswordHasher<User> hasher = new PasswordHasher<User>();
+            var result = hasher.VerifyHashedPassword(dbUser, dbUser.Password, user.OldPassword);
+            if (result != PasswordVerificationResult.Success)
             {
                 return BadRequest(ModelState);
             }
 
-            dbUser.Password = user.NewPassword;
+            dbUser.Password = hasher.HashPassword(dbUser,user.NewPassword);
 
             await _context.SaveChangesAsync();
 
