@@ -17,11 +17,12 @@ namespace HomeWallet_API.Logic
             _dbContext = dbContext;
         }
 
-        public DailySummary GetDailySummary(int userId, string dateString)
+        public async Task<DailySummary> GetDailySummary(int userId, string dateString)
         {
             var date = DateTime.Parse(dateString);
-            var total = GetAllMoney(userId, date);
-            var percent = GetPercent(userId, date, total);
+            var total = GetAllMoney(userId, date,date);
+            var percent = await GetPercent(userId, date, date, total);
+            var categories = GetAllCategoriesCount(userId, date, date);
             var dailySummary = new DailySummary()
             {
                 Date = dateString,
@@ -31,40 +32,87 @@ namespace HomeWallet_API.Logic
             return dailySummary;
         }
 
-        private double GetPercent(int userId, DateTime date, double total)
+        private async Task<double> GetPercent(int userId, DateTime startDate, DateTime endDate, double total)
         {
             double percent;
-            var plan = _dbContext.Plans.FirstOrDefault(p => p.UserID == userId && p.StartDate <= date && p.EndDate >= date);
-            if (plan != null)
+            var amount = await _dbContext.Plans.Where(p => p.UserID == userId && p.StartDate <= startDate && p.EndDate >= endDate).Select(p=>p.Amount).DefaultIfEmpty(-1).FirstAsync();
+            if (amount == -1)
             {
-                percent = Math.Round(100 * total / plan.Amount, 1);
+                return amount;
             }
-            else
-            {
-                percent = -1;
-            }
+            percent = Math.Round(100 * total / amount, 1);
 
             return percent;
         }
 
-        private double GetAllMoney(int userId, DateTime date)
+        private double GetAllMoney(int userId, DateTime startDate, DateTime endDate)
         {
-            var receipts = _dbContext.Receipts.Where(r => r.PurchaseDate == date && r.UserID == userId).Include(r => r.ReceiptProducts).ToList();
-            double result = 0;
+            return _dbContext.Receipts
+                .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
+                .Include(r => r.ReceiptProducts)
+                .Select(r=>r.ReceiptProducts
+                    .Select(rp=>rp.Amount*rp.Price)
+                    .Sum())
+                .Sum();
+        }
 
-            foreach (var receipt in receipts)
+        private double GetAllShopsCount(int userId, DateTime startDate, DateTime endDate)
+        {
+            return _dbContext.Receipts
+                .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
+                .Select(r => r.ShopID)
+                .Sum();
+        }
+
+        private double GetAllProductsCount(int userId, DateTime startDate, DateTime endDate)
+        {
+            return _dbContext.Receipts
+                .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
+                .Include(r => r.ReceiptProducts)
+                .Select(r => r.ReceiptProducts
+                    .Select(rp=>rp.ProductID)
+                    .Sum())
+                .Sum();
+        }
+
+        private double GetAllCategoriesCount(int userId, DateTime startDate, DateTime endDate)
+        {
+            try
             {
-                foreach (var productreceipt in receipt.ReceiptProducts)
-                {
-                    result += productreceipt.Amount * productreceipt.Price;
-                }
+                var caetgories = _dbContext.Receipts
+                    .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
+                    .Include(r => r.ReceiptProducts)
+                    .ThenInclude(rp => rp.Product)
+                    .ThenInclude(p => p.ProductCategories)
+                    .SelectMany(x => x.ReceiptProducts
+                        .SelectMany(rp => rp.Product.ProductCategories
+                            .Select(pc => pc.CategoryID))
+                        .Distinct()
+                        .ToList());
+
             }
-            return result;
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+
+            return _dbContext.Receipts
+                .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
+                .Include(r => r.ReceiptProducts)
+                .ThenInclude(rp=>rp.Product)
+                .ThenInclude(p=>p.ProductCategories)
+                .Select(r => r.ReceiptProducts
+                    .Select(rp => rp.Product.ProductCategories
+                        .Select(pc=>pc.CategoryID))
+                    .Distinct())
+                .Distinct()
+                .Count();
         }
     }
 
     public interface ISummaryHelper
     {
-        DailySummary GetDailySummary(int userId, string date);
+        Task<DailySummary> GetDailySummary(int userId, string date);
     }
 }
