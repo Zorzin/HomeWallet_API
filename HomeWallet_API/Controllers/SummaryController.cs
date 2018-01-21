@@ -38,7 +38,7 @@ namespace HomeWallet_API.Controllers
                 return BadRequest();
             }
 
-            var dailySummary = _summaryHelper.GetDailySummary(userId, date);
+            var dailySummary = await _summaryHelper.GetSummary(userId, date,date);
 
             if (dailySummary == null)
             {
@@ -47,6 +47,5 @@ namespace HomeWallet_API.Controllers
 
             return Ok(dailySummary);
         }
-
     }
 }

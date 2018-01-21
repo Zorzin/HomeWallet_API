@@ -41,6 +41,11 @@ namespace HomeWallet_API
             services.AddScoped<ICategoryHelper, CategoryHelper>();
             services.AddScoped<IPlanHelper, PlanHelper>();
             services.AddScoped<ISummaryHelper, SummaryHelper>();
+            services.AddScoped<ICategorySummaryHelper, CategorySummaryHelper>();
+            services.AddScoped<IPlanSummaryHelper, PlanSummaryHelper>();
+            services.AddScoped<IProductSummaryHelper, ProductSummaryHelper>();
+            services.AddScoped<IShopSummaryHelper, ShopSummaryHelper>();
+            services.AddScoped<IDbHelper, DbHelper>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

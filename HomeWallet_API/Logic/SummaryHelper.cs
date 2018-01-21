@@ -10,40 +10,143 @@ namespace HomeWallet_API.Logic
 {
     public class SummaryHelper : ISummaryHelper
     {
-        private DBContext _dbContext;
+        private readonly DBContext _dbContext;
+        private readonly IDbHelper _dbHelper;
 
-        public SummaryHelper(DBContext dbContext)
+        public SummaryHelper(DBContext dbContext, IDbHelper dbHelper)
         {
             _dbContext = dbContext;
+            _dbHelper = dbHelper;
         }
 
-        public async Task<DailySummary> GetDailySummary(int userId, string dateString)
+        public async Task<Summary> GetSummary(int userId, string startDateString, string endDateString)
         {
-            var date = DateTime.Parse(dateString);
-            var total = GetAllMoney(userId, date,date);
-            var percent = await GetPercent(userId, date, date, total);
-            var dailySummary = new DailySummary()
+            var startDate = DateTime.Parse(startDateString);
+            var endDate = DateTime.Parse(startDateString);
+            var totalMoney = await GetAllMoney(userId, startDate, endDate);
+            var percentPlan = await GetPercent(userId, startDate, endDate, totalMoney);
+            var productsCost = await GetProductsCost(userId, startDate, endDate);
+            var minimumCost = Math.Round(productsCost.Min(),2);
+            var maxCost = Math.Round(productsCost.Max(), 2);
+            var averageCost = Math.Round(productsCost.Average(), 2);
+            var summary = new Summary()
             {
-                Date = dateString,
-                PercentPlan = percent,
-                TotalCost = total
+                StartDate = startDateString,
+                EndDate = endDateString,
+                PercentPlan = percentPlan,
+                TotalCost = totalMoney,
+                ShopsCount = GetAllShopsCount(userId, startDate, endDate),
+                ProductsCount = GetAllProductsCount(userId, startDate, endDate),
+                CategoriesCount = GetAllCategoriesCount(userId, startDate, endDate),
+                EachCategoryCost = await GetMoneySpentOnEachCategory(userId, startDate, endDate),
+                EachShopMoney = await GetMoneySpentInEachShop(userId, startDate, endDate),
+                EachShopProducts = await GetProductsAmountForEachShop(userId, startDate, endDate),
+                MaxProductCost = maxCost,
+                MinProductCost = minimumCost,
+                AverageProductCost = averageCost,
+                AverageReceiptCost = await GetAverageReceiptCost(userId, startDate, endDate)
             };
-            return dailySummary;
+            return summary;
         }
 
-        private int GetProductAmountBoughtInShop(int userId, DateTime startDate, DateTime endDate, int shopId)
+        private async Task<List<ChartData>> GetProductsAmountForEachShop(int userId, DateTime startDate, DateTime endDate)
         {
-            return _dbContext.ReceiptProducts
+            var productsInShops = new List<ChartData>();
+            var shops = await GetAllShops(userId, startDate, endDate);
+            foreach (var shop in shops)
+            {
+                productsInShops.Add(new ChartData()
+                {
+                    Name = _dbHelper.GetShopName(shop),
+                    Value = await GetProductAmountBoughtInShop(userId, startDate, endDate, shop)
+                });
+            }
+            return productsInShops;
+        }
+
+        private async Task<List<ChartData>> GetMoneySpentInEachShop(int userId, DateTime startDate, DateTime endDate)
+        {
+            var shopMoney = new List<ChartData>();
+            var shops = await GetAllShops(userId, startDate, endDate);
+            foreach (var shop in shops)
+            {
+                shopMoney.Add(new ChartData()
+                {
+                    Name = _dbHelper.GetShopName(shop),
+                    Value = await GetMoneySpentInShop(userId, startDate, endDate, shop)
+                });
+            }
+            return shopMoney;
+        }
+
+        private async Task<List<ChartData>> GetMoneySpentOnEachCategory(int userId, DateTime startDate, DateTime endDate)
+        {
+            var categoriesMoney = new List<ChartData>();
+            var categories = await GetAllCategories(userId, startDate, endDate);
+            foreach (var category in categories)
+            {
+                categoriesMoney.Add(new ChartData()
+                {
+                    Name = _dbHelper.GetCategoryName(category),
+                    Value = await GetMoneySpentOnCategory(userId, startDate, endDate, category)
+                });
+            }
+            return categoriesMoney;
+        }
+
+        private async Task<double> GetAverageReceiptCost(int userId, DateTime startDate, DateTime endDate)
+        {
+            var total = await GetAllMoney(userId, startDate, endDate);
+            var receipt = await GetReceiptAmount(userId, startDate, endDate);
+            return Math.Round(total / receipt,2);
+        }
+
+        private async Task<int> GetReceiptAmount(int userId, DateTime startDate, DateTime endDate)
+        {
+            return await _dbContext.Receipts.CountAsync(r => r.UserID == userId && r.PurchaseDate >= startDate && r.PurchaseDate <= endDate);
+        }
+
+        private double GetCheaperProductCost(int userId, DateTime startDate, DateTime endDate)
+        {
+            return Math.Round(GetProductsCost(userId, startDate, endDate).Result.Min(),2);
+        }
+
+        private double GetMostExpensiveProductCost(int userId, DateTime startDate, DateTime endDate)
+        {
+            return Math.Round(GetProductsCost(userId, startDate, endDate).Result
+                .Max(),2);
+        }
+
+        private double GetAverageProductCost(int userId, DateTime startDate, DateTime endDate)
+        {
+            return Math.Round(GetProductsCost(userId,startDate,endDate).Result
+                .Average(),2);
+        }
+
+        private async Task<List<double>> GetProductsCost(int userId, DateTime startDate, DateTime endDate)
+        {
+            return await _dbContext.ReceiptProducts
+                .Include(rp => rp.Receipt)
+                .Where(rp =>
+                    rp.Receipt.PurchaseDate >= startDate && rp.Receipt.PurchaseDate <= endDate &&
+                    rp.Receipt.UserID == userId)
+                .Select(rp => rp.Price)
+                .ToListAsync();
+        }
+
+        private async Task<int> GetProductAmountBoughtInShop(int userId, DateTime startDate, DateTime endDate, int shopId)
+        {
+            return await _dbContext.ReceiptProducts
                 .Include(r => r.Receipt)
                 .Where(r => r.Receipt.PurchaseDate >= startDate && r.Receipt.PurchaseDate <= endDate &&
                             r.Receipt.UserID == userId && r.Receipt.ShopID == shopId)
                 .Select(r => r.ProductID)
-                .Count();
+                .CountAsync();
         }
 
-        private double GetMoneySpentOnCategory(int userId, DateTime startDate, DateTime endDate, int categoryId)
+        private async Task<double> GetMoneySpentOnCategory(int userId, DateTime startDate, DateTime endDate, int categoryId)
         {
-            return _dbContext.ReceiptProducts
+            return Math.Round(await _dbContext.ReceiptProducts
                 .Include(rp => rp.Receipt)
                 .Include(p => p.Product)
                 .ThenInclude(pc => pc.ProductCategories)
@@ -51,30 +154,30 @@ namespace HomeWallet_API.Logic
                     rp.Receipt.UserID == userId && rp.Receipt.PurchaseDate >= startDate &&
                     rp.Receipt.PurchaseDate <= endDate && rp.Product.ProductCategories.Any(pc=>pc.CategoryID==categoryId))
                 .Select(rp => rp.Amount * rp.Price)
-                .Sum();
+                .SumAsync(),2);
         }
 
-        private double GetMoneySpentOnProduct(int userId, DateTime startDate, DateTime endDate, int productId)
+        private async Task<double> GetMoneySpentOnProduct(int userId, DateTime startDate, DateTime endDate, int productId)
         {
-            return _dbContext.Receipts
+            return Math.Round(await _dbContext.Receipts
                 .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
                 .Include(r => r.ReceiptProducts)
                 .Select(r => r.ReceiptProducts
                     .Where(rp => rp.ProductID==productId)
                     .Select(rp => rp.Amount * rp.Price)
                     .Sum())
-                .Sum();
+                .SumAsync(),2);
         }
 
-        private double GetMoneySpentInShop(int userId, DateTime startDate, DateTime endDate, int shopId)
+        private async Task<double> GetMoneySpentInShop(int userId, DateTime startDate, DateTime endDate, int shopId)
         {
-            return _dbContext.Receipts
+            return Math.Round(await _dbContext.Receipts
                 .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId && r.ShopID == shopId)
                 .Include(r=>r.ReceiptProducts)
                 .Select(r => r.ReceiptProducts
                     .Select(rp=>rp.Amount * rp.Price)
                     .Sum())
-                .Sum();
+                .SumAsync(),2);
         }
 
         private async Task<double> GetPercent(int userId, DateTime startDate, DateTime endDate, double total)
@@ -90,58 +193,58 @@ namespace HomeWallet_API.Logic
             return percent;
         }
 
-        private double GetAllMoney(int userId, DateTime startDate, DateTime endDate)
+        private async Task<double> GetAllMoney(int userId, DateTime startDate, DateTime endDate)
         {
-            return _dbContext.Receipts
+            return Math.Round(await _dbContext.Receipts
                 .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
                 .Include(r => r.ReceiptProducts)
                 .Select(r=>r.ReceiptProducts
                     .Select(rp=>rp.Amount*rp.Price)
                     .Sum())
-                .Sum();
+                .SumAsync(),2);
         }
 
         private int GetAllShopsCount(int userId, DateTime startDate, DateTime endDate)
         {
-            return GetAllShops(userId,startDate,endDate).Count;
+            return GetAllShops(userId,startDate,endDate).Result.Count;
         }
 
-        private List<int> GetAllShops(int userId, DateTime startDate, DateTime endDate)
+        private async Task<List<int>> GetAllShops(int userId, DateTime startDate, DateTime endDate)
         {
-            return _dbContext.Receipts
+            return await _dbContext.Receipts
                 .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
                 .Select(r => r.ShopID)
                 .Distinct()
-                .ToList();
+                .ToListAsync();
         }
 
         private int GetAllProductsCount(int userId, DateTime startDate, DateTime endDate)
         {
-            return GetAllProducts(userId, startDate, endDate).Count;
+            return GetAllProducts(userId, startDate, endDate).Result.Count;
         }
 
-        private List<int> GetAllProducts(int userId, DateTime startDate, DateTime endDate)
+        private async Task<List<int>> GetAllProducts(int userId, DateTime startDate, DateTime endDate)
         {
-            return _dbContext.Receipts
+            return await _dbContext.Receipts
                 .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
                 .Include(r => r.ReceiptProducts)
                 .Select(r => r.ReceiptProducts
-                    .Select(rp=>rp.ProductID)
+                    .Select(rp => rp.ProductID)
                     .Distinct()
                     .ToList())
                 .Distinct()
-                .SelectMany(x=>x)
-                .ToList();
+                .SelectMany(x => x)
+                .ToListAsync();
         }
 
-        private double GetAllCategoriesCount(int userId, DateTime startDate, DateTime endDate)
+        private int GetAllCategoriesCount(int userId, DateTime startDate, DateTime endDate)
         {
-            return GetAllCategories(userId, startDate, endDate).Count;
+            return GetAllCategories(userId, startDate, endDate).Result.Count;
         }
 
-        private List<int> GetAllCategories(int userId, DateTime startDate, DateTime endDate)
+        private async Task<List<int>> GetAllCategories(int userId, DateTime startDate, DateTime endDate)
         {
-            var receiptList = _dbContext.Receipts
+            var receiptList = await _dbContext.Receipts
                             .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
                             .Include(r => r.ReceiptProducts)
                             .ThenInclude(rp => rp.Product)
@@ -151,7 +254,7 @@ namespace HomeWallet_API.Logic
                                     .Select(pc => pc.CategoryID))
                                 .Distinct()
                                 .ToList())
-                            .ToList();
+                            .ToListAsync();
 
             var categories = new List<int>();
 
@@ -172,6 +275,6 @@ namespace HomeWallet_API.Logic
 
     public interface ISummaryHelper
     {
-        Task<DailySummary> GetDailySummary(int userId, string date);
+        Task<Summary> GetSummary(int userId, string startDate, string endDate);
     }
 }
