@@ -22,7 +22,6 @@ namespace HomeWallet_API.Logic
             var date = DateTime.Parse(dateString);
             var total = GetAllMoney(userId, date,date);
             var percent = await GetPercent(userId, date, date, total);
-            var categories = GetAllCategoriesCount(userId, date, date);
             var dailySummary = new DailySummary()
             {
                 Date = dateString,
@@ -30,6 +29,45 @@ namespace HomeWallet_API.Logic
                 TotalCost = total
             };
             return dailySummary;
+        }
+
+        private double GetMoneySpentOnCategory(int userId, DateTime startDate, DateTime endDate, int categoryId)
+        {
+            var test = _dbContext.Receipts
+                .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
+                .Include(r => r.ReceiptProducts)
+                .ThenInclude(rp => rp.Product)
+                .ThenInclude(p => p.ProductCategories)
+                .Select(r =>r.ReceiptProducts
+                    .Where(rp=>rp.Product.ReceiptProducts)
+                    .Select(rp=>rp.Amount*rp.Price)
+                    .Sum())
+                .Sum();
+                
+
+        }
+
+        private double GetMoneySpentOnProduct(int userId, DateTime startDate, DateTime endDate, int productId)
+        {
+            return _dbContext.Receipts
+                .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
+                .Include(r => r.ReceiptProducts)
+                .Select(r => r.ReceiptProducts
+                    .Where(rp => rp.ProductID==productId)
+                    .Select(rp => rp.Amount * rp.Price)
+                    .Sum())
+                .Sum();
+        }
+
+        private double GetMoneySpentInShop(int userId, DateTime startDate, DateTime endDate, int shopId)
+        {
+            return _dbContext.Receipts
+                .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId && r.ShopID == shopId)
+                .Include(r=>r.ReceiptProducts)
+                .Select(r => r.ReceiptProducts
+                    .Select(rp=>rp.Amount * rp.Price)
+                    .Sum())
+                .Sum();
         }
 
         private async Task<double> GetPercent(int userId, DateTime startDate, DateTime endDate, double total)
@@ -56,58 +94,72 @@ namespace HomeWallet_API.Logic
                 .Sum();
         }
 
-        private double GetAllShopsCount(int userId, DateTime startDate, DateTime endDate)
+        private int GetAllShopsCount(int userId, DateTime startDate, DateTime endDate)
+        {
+            return GetAllShops(userId,startDate,endDate).Count;
+        }
+
+        private List<int> GetAllShops(int userId, DateTime startDate, DateTime endDate)
         {
             return _dbContext.Receipts
                 .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
                 .Select(r => r.ShopID)
-                .Sum();
+                .Distinct()
+                .ToList();
         }
 
-        private double GetAllProductsCount(int userId, DateTime startDate, DateTime endDate)
+        private int GetAllProductsCount(int userId, DateTime startDate, DateTime endDate)
+        {
+            return GetAllProducts(userId, startDate, endDate).Count;
+        }
+
+        private List<int> GetAllProducts(int userId, DateTime startDate, DateTime endDate)
         {
             return _dbContext.Receipts
                 .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
                 .Include(r => r.ReceiptProducts)
                 .Select(r => r.ReceiptProducts
                     .Select(rp=>rp.ProductID)
-                    .Sum())
-                .Sum();
+                    .Distinct()
+                    .ToList())
+                .Distinct()
+                .SelectMany(x=>x)
+                .ToList();
         }
 
         private double GetAllCategoriesCount(int userId, DateTime startDate, DateTime endDate)
         {
-            try
-            {
-                var caetgories = _dbContext.Receipts
-                    .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
-                    .Include(r => r.ReceiptProducts)
-                    .ThenInclude(rp => rp.Product)
-                    .ThenInclude(p => p.ProductCategories)
-                    .SelectMany(x => x.ReceiptProducts
-                        .SelectMany(rp => rp.Product.ProductCategories
-                            .Select(pc => pc.CategoryID))
-                        .Distinct()
-                        .ToList());
+            return GetAllCategories(userId, startDate, endDate).Count;
+        }
 
-            }
-            catch (Exception e)
+        private List<int> GetAllCategories(int userId, DateTime startDate, DateTime endDate)
+        {
+            var receiptList = _dbContext.Receipts
+                            .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
+                            .Include(r => r.ReceiptProducts)
+                            .ThenInclude(rp => rp.Product)
+                            .ThenInclude(p => p.ProductCategories)
+                            .Select(x => x.ReceiptProducts
+                                .SelectMany(rp => rp.Product.ProductCategories
+                                    .Select(pc => pc.CategoryID))
+                                .Distinct()
+                                .ToList())
+                            .ToList();
+
+            var categories = new List<int>();
+
+            foreach (var receipt in receiptList)
             {
-                Console.WriteLine(e);
-                throw;
+                foreach (var category in receipt)
+                {
+                    if (!categories.Contains(category))
+                    {
+                        categories.Add(category);
+                    }
+                }
             }
 
-            return _dbContext.Receipts
-                .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
-                .Include(r => r.ReceiptProducts)
-                .ThenInclude(rp=>rp.Product)
-                .ThenInclude(p=>p.ProductCategories)
-                .Select(r => r.ReceiptProducts
-                    .Select(rp => rp.Product.ProductCategories
-                        .Select(pc=>pc.CategoryID))
-                    .Distinct())
-                .Distinct()
-                .Count();
+            return categories;
         }
     }
 

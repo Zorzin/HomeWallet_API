@@ -12,5 +12,6 @@ namespace HomeWallet_API.Models
         public int UserID { get; set; }
         public virtual User User { get; set; }
         public virtual ICollection<ProductCategory> ProductCategories { get; set; }
+        public virtual ICollection<ReceiptProduct> ReceiptProducts { get; set; }
     }
 }
