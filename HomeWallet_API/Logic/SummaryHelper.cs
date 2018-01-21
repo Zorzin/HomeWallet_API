@@ -31,20 +31,27 @@ namespace HomeWallet_API.Logic
             return dailySummary;
         }
 
+        private int GetProductAmountBoughtInShop(int userId, DateTime startDate, DateTime endDate, int shopId)
+        {
+            return _dbContext.ReceiptProducts
+                .Include(r => r.Receipt)
+                .Where(r => r.Receipt.PurchaseDate >= startDate && r.Receipt.PurchaseDate <= endDate &&
+                            r.Receipt.UserID == userId && r.Receipt.ShopID == shopId)
+                .Select(r => r.ProductID)
+                .Count();
+        }
+
         private double GetMoneySpentOnCategory(int userId, DateTime startDate, DateTime endDate, int categoryId)
         {
-            var test = _dbContext.Receipts
-                .Where(r => r.PurchaseDate >= startDate && r.PurchaseDate <= endDate && r.UserID == userId)
-                .Include(r => r.ReceiptProducts)
-                .ThenInclude(rp => rp.Product)
-                .ThenInclude(p => p.ProductCategories)
-                .Select(r =>r.ReceiptProducts
-                    .Where(rp=>rp.Product.ReceiptProducts)
-                    .Select(rp=>rp.Amount*rp.Price)
-                    .Sum())
+            return _dbContext.ReceiptProducts
+                .Include(rp => rp.Receipt)
+                .Include(p => p.Product)
+                .ThenInclude(pc => pc.ProductCategories)
+                .Where(rp =>
+                    rp.Receipt.UserID == userId && rp.Receipt.PurchaseDate >= startDate &&
+                    rp.Receipt.PurchaseDate <= endDate && rp.Product.ProductCategories.Any(pc=>pc.CategoryID==categoryId))
+                .Select(rp => rp.Amount * rp.Price)
                 .Sum();
-                
-
         }
 
         private double GetMoneySpentOnProduct(int userId, DateTime startDate, DateTime endDate, int productId)
