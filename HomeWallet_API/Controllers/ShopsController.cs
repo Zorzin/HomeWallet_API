@@ -16,17 +16,20 @@ namespace HomeWallet_API.Controllers
     {
         private readonly DBContext _context;
         private IShopHelper _shopHelper;
+        private IShopSummaryHelper _shopSummaryHelper;
 
-        public ShopsController(DBContext context, IShopHelper shopHelper)
+        public ShopsController(DBContext context, IShopHelper shopHelper, IShopSummaryHelper shopSummaryHelper)
         {
             _context = context;
             _shopHelper = shopHelper;
+            _shopSummaryHelper = shopSummaryHelper;
         }
 
         // GET: api/Shops/1
         [HttpGet("{userId}")]
         public IEnumerable<Shop> GetShops(int userId)
         {
+            _shopSummaryHelper.GetShopSummary(1, 39, "2017-01-01", "2019-01-01");
             return _context.Shops.Where(s=>s.UserID == userId);
         }
 
