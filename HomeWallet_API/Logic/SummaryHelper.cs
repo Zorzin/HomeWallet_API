@@ -25,7 +25,7 @@ namespace HomeWallet_API.Logic
             var endDate = DateTime.Parse(startDateString);
             var totalMoney = await GetAllMoney(userId, startDate, endDate);
             var percentPlan = await GetPercent(userId, startDate, endDate, totalMoney);
-            var productsCost = await GetProductsCost(userId, startDate, endDate);
+            var productsCost = await _dbHelper.GetProductsCost(userId, startDate, endDate);
             var minimumCost = Math.Round(productsCost.Min(),2);
             var maxCost = Math.Round(productsCost.Max(), 2);
             var averageCost = Math.Round(productsCost.Average(), 2);
@@ -104,34 +104,6 @@ namespace HomeWallet_API.Logic
         private async Task<int> GetReceiptAmount(int userId, DateTime startDate, DateTime endDate)
         {
             return await _dbContext.Receipts.CountAsync(r => r.UserID == userId && r.PurchaseDate >= startDate && r.PurchaseDate <= endDate);
-        }
-
-        private double GetCheaperProductCost(int userId, DateTime startDate, DateTime endDate)
-        {
-            return Math.Round(GetProductsCost(userId, startDate, endDate).Result.Min(),2);
-        }
-
-        private double GetMostExpensiveProductCost(int userId, DateTime startDate, DateTime endDate)
-        {
-            return Math.Round(GetProductsCost(userId, startDate, endDate).Result
-                .Max(),2);
-        }
-
-        private double GetAverageProductCost(int userId, DateTime startDate, DateTime endDate)
-        {
-            return Math.Round(GetProductsCost(userId,startDate,endDate).Result
-                .Average(),2);
-        }
-
-        private async Task<List<double>> GetProductsCost(int userId, DateTime startDate, DateTime endDate)
-        {
-            return await _dbContext.ReceiptProducts
-                .Include(rp => rp.Receipt)
-                .Where(rp =>
-                    rp.Receipt.PurchaseDate >= startDate && rp.Receipt.PurchaseDate <= endDate &&
-                    rp.Receipt.UserID == userId)
-                .Select(rp => rp.Price)
-                .ToListAsync();
         }
 
         private async Task<int> GetProductAmountBoughtInShop(int userId, DateTime startDate, DateTime endDate, int shopId)
