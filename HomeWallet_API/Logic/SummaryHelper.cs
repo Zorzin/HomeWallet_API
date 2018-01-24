@@ -35,8 +35,8 @@ namespace HomeWallet_API.Logic
                 EndDate = endDateString,
                 PercentPlan = percentPlan,
                 TotalCost = totalMoney,
-                ShopsCount = GetAllShopsCount(userId, startDate, endDate),
-                ProductsCount = GetAllProductsCount(userId, startDate, endDate),
+                ShopsCount = await GetAllShopsCount(userId, startDate, endDate),
+                ProductsCount = await GetAllProductsCount(userId, startDate, endDate),
                 CategoriesCount = GetAllCategoriesCount(userId, startDate, endDate),
                 EachCategoryCost = await GetMoneySpentOnEachCategory(userId, startDate, endDate),
                 EachShopMoney = await GetMoneySpentInEachShop(userId, startDate, endDate),
@@ -176,9 +176,9 @@ namespace HomeWallet_API.Logic
                 .SumAsync(),2);
         }
 
-        private int GetAllShopsCount(int userId, DateTime startDate, DateTime endDate)
+        private async Task<int> GetAllShopsCount(int userId, DateTime startDate, DateTime endDate)
         {
-            return GetAllShops(userId,startDate,endDate).Result.Count;
+            return (await GetAllShops(userId,startDate,endDate)).Count;
         }
 
         private async Task<List<int>> GetAllShops(int userId, DateTime startDate, DateTime endDate)
@@ -190,9 +190,9 @@ namespace HomeWallet_API.Logic
                 .ToListAsync();
         }
 
-        private int GetAllProductsCount(int userId, DateTime startDate, DateTime endDate)
+        private async Task<int> GetAllProductsCount(int userId, DateTime startDate, DateTime endDate)
         {
-            return GetAllProducts(userId, startDate, endDate).Result.Count;
+            return (await GetAllProducts(userId, startDate, endDate)).Count;
         }
 
         private async Task<List<int>> GetAllProducts(int userId, DateTime startDate, DateTime endDate)
