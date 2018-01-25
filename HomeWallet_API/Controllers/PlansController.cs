@@ -18,12 +18,14 @@ namespace HomeWallet_API.Controllers
     public class PlansController : Controller
     {
         private readonly DBContext _context;
-        private IPlanHelper _planHelper;
+        private readonly IPlanHelper _planHelper;
+        private readonly IPlanSummaryHelper _planSummaryHelper;
 
-        public PlansController(DBContext context, IPlanHelper planHelper)
+        public PlansController(DBContext context, IPlanHelper planHelper, IPlanSummaryHelper planSummaryHelper)
         {
             _context = context;
             _planHelper = planHelper;
+            _planSummaryHelper = planSummaryHelper;
         }
 
         // GET: api/Plans/1
@@ -33,6 +35,38 @@ namespace HomeWallet_API.Controllers
             return _context.Plans.Where(p=>p.UserID == userId).OrderByDescending(p=>p.StartDate);
         }
 
+        // GET: api/plans/summary/
+        [HttpGet("summary/{userId}/{planId}")]
+        public async Task<IActionResult> GetSummaryByDate(int userId, int planId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return BadRequest();
+            }
+
+            var plan = _context.Plans.FirstOrDefault(u => u.ID == planId && u.UserID == userId);
+
+            if (plan == null)
+            {
+                return BadRequest();
+            }
+
+            var summary = await _planSummaryHelper.GetPlanSummary(userId, planId);
+
+            if (summary == null)
+            {
+                return BadRequest();
+            }
+
+            return Ok(summary);
+        }
         // GET: api/Plans/1/2
         [HttpGet("details/{userId}/{id}")]
         public async Task<IActionResult> GetPlanWithDetails([FromRoute] int userId, [FromRoute]int id)

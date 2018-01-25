@@ -22,7 +22,53 @@ namespace HomeWallet_API.Logic
         {
 
             var dates = await GetPlanDates(userId, planId);
-            return null;
+            var startDate = dates.StartDate;
+            var endDate = dates.EndDate;
+
+            var planSummary = new PlanSummary()
+            {
+                Amount = await GetPlanAmount(userId, planId),
+                AverageMoneyLeftPerDay = await GetAverageMoneyLeftPerDayForPlan(userId, planId, startDate, endDate),
+                AverageMoneySpentPerDay = await GetAverageMoneySpentPerDayForPlan(userId, startDate, endDate),
+                MoneyLeft = await GetMoneyLeftForPlan(userId, planId, startDate, endDate),
+                MoneyLeftPercentage = await GetMoneyLeftForPlanPercentage(userId, planId, startDate, endDate),
+                MoneySpentOnCategories = await GetMoneySpentOnCategories(userId, startDate, endDate),
+                MoneySpentPercentage = await GetMoneySpentForPlanPercentage(userId, planId, startDate, endDate),
+                MostExpensiveProduct = await GetMostExpensiveProduct(userId, startDate, endDate),
+                MostPopularCategory = await GetMostPopularCategoryForPlan(userId, startDate, endDate),
+                MostPopularProduct = await GetMostPopularProductForPlan(userId, startDate, endDate),
+                ProductsBoughtAmount = await GetProductsAmountForPlan(userId, startDate, endDate)
+            };
+            return planSummary;
+        }
+
+        private async Task<int> GetMostExpensiveProduct(int userId, DateTime startDate, DateTime endDate)
+        {
+            return await _dbContext.ReceiptProducts
+                .Include(rp => rp.Receipt)
+                .Where(rp =>
+                    rp.Receipt.PurchaseDate >= startDate && rp.Receipt.PurchaseDate <= endDate &&
+                    rp.Receipt.UserID == userId)
+                .Select(rp => new {P = rp.Price,I=rp.ProductID})
+                .OrderByDescending(x=>x.P)
+                .Select(x=>x.I)
+                .FirstOrDefaultAsync();
+        }
+
+        private async Task<List<ChartData>> GetMoneySpentOnCategories(int userId, DateTime startDate, DateTime endDate)
+        {
+            var categories = await GetCategoriesForPlan(userId, startDate, endDate);
+            var result = new List<ChartData>();
+
+            foreach (var category in categories)
+            {
+                result.Add(new ChartData()
+                {
+                    Name = await _dbHelper.GetCategoryName(category),
+                    Value = await GetMoneySpentOnCategoryForPlan(userId,startDate,endDate,category)
+                });
+            }
+            return result;
         }
 
         private async Task<double> GetPlanAmount(int userId, int planId)

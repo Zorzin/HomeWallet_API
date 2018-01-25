@@ -15,8 +15,8 @@ namespace HomeWallet_API.Controllers
     public class ShopsController : Controller
     {
         private readonly DBContext _context;
-        private IShopHelper _shopHelper;
-        private IShopSummaryHelper _shopSummaryHelper;
+        private readonly IShopHelper _shopHelper;
+        private readonly IShopSummaryHelper _shopSummaryHelper;
 
         public ShopsController(DBContext context, IShopHelper shopHelper, IShopSummaryHelper shopSummaryHelper)
         {
@@ -69,6 +69,39 @@ namespace HomeWallet_API.Controllers
             }
 
             return Ok(products);
+        }
+
+        // GET: api/shops/summary/
+        [HttpGet("summary/{userId}/{shopId}/{startDate}/{endDate}")]
+        public async Task<IActionResult> GetSummaryByDate(int userId, int shopId, string startDate, string endDate)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return BadRequest();
+            }
+
+            var shop = _context.Shops.FirstOrDefault(u => u.ID == shopId && u.UserID == userId);
+
+            if (shop == null)
+            {
+                return BadRequest();
+            }
+
+            var summary = await _shopSummaryHelper.GetShopSummary(userId, shopId, startDate, endDate);
+
+            if (summary == null)
+            {
+                return BadRequest();
+            }
+
+            return Ok(summary);
         }
 
         // PUT: api/Shops/1/5/sklep

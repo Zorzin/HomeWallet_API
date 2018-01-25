@@ -18,12 +18,32 @@ namespace HomeWallet_API.Logic
             _dbHelper = dbHelper;
         }
 
-        public Task<ProductSummary> GetProductSummary(int userId, int productId, string startDate, string endDate)
+        public async Task<ProductSummary> GetProductSummary(int userId, int productId, string startDate, string endDate)
         {
-            return null;
+            var start = DateTime.Parse(startDate);
+            var end = DateTime.Parse(endDate);
+
+            var productSummary = new ProductSummary()
+            {
+                AverageAmountOnReceipt = await GetAverageBoughtAmountOfProduct(userId,productId,start,end),
+                AverageCostPerDay = await GetAverageCostPerDay(userId,productId,start,end),
+                AveragePrice = await GetAverageProductPrice(userId,productId,start,end),
+                AveragePriceInShops = await GetAveragePriceInShopsAsChartData(userId,productId,start,end),
+                MaxAmountOnReceipt = await GetMaxBoughtAmountOfProduct(userId,productId,start,end),
+                MaxPrice = (await GetProductPrices(userId,productId,start,end)).Max(),
+                MinAmountOnReceipt = await GetMinBoughtAmountOfProduct(userId,productId,start,end),
+                MinPrice = (await GetProductPrices(userId, productId, start, end)).Min(),
+                PercentageAmountOfTotalMoneySpent = await GetPercentageMoneySpentOnThisProductComparedToEverything(userId,productId,start,end),
+                ShopsAmount = await GetShopsCount(userId,productId,start,end),
+                ShopWithCheapestPrice = (await GetShopWithLowestPrice(userId,productId,start,end)).ShopId,
+                ShopWithMostExpensivePrice = (await GetShopWithHighestPrice(userId, productId, start, end)).ShopId,
+                TotalMoneySpent = await GetMoneySpentOnProduct(userId,productId,start,end),
+                TotalTimesBoughtAmount = await GetTimesBought(userId,productId,start,end)
+            };
+            return productSummary;
         }
 
-        private async Task<double> GetAvarageCostPerDay(int userId, int productId, DateTime startDate, DateTime endDate)
+        private async Task<double> GetAverageCostPerDay(int userId, int productId, DateTime startDate, DateTime endDate)
         {
             var totalSpentOnProduct = await GetMoneySpentOnProduct(userId, productId, startDate, endDate);
             var daysBetweenDates = _dbHelper.GetDaysBetweenDates(startDate, endDate);
@@ -61,7 +81,7 @@ namespace HomeWallet_API.Logic
                 .SumAsync(),2);
         }
 
-        private async Task<double> GetAvarageBoughtAmountOfProduct(int userId, int productId, DateTime startDate,
+        private async Task<double> GetAverageBoughtAmountOfProduct(int userId, int productId, DateTime startDate,
             DateTime endDate)
         {
             return Math.Round(
@@ -114,7 +134,23 @@ namespace HomeWallet_API.Logic
             };
         }
 
-        private async Task<List<ShopPrice>> GetAvaragePriceInShops(int userId, int productId, DateTime startDate, DateTime endDate)
+        private async Task<List<ChartData>> GetAveragePriceInShopsAsChartData(int userId, int productId, DateTime startDate,
+            DateTime endDate)
+        {
+            var averagePrices = await GetAveragePriceInShops(userId, productId, startDate, endDate);
+            var result = new List<ChartData>();
+            foreach (var averagePrice in averagePrices)
+            {
+                result.Add(new ChartData()
+                {
+                    Name = await _dbHelper.GetShopName(averagePrice.ShopId),
+                    Value = averagePrice.Price
+                });
+            }
+            return result;
+        }
+
+        private async Task<List<ShopPrice>> GetAveragePriceInShops(int userId, int productId, DateTime startDate, DateTime endDate)
         {
             var result = new List<ShopPrice>();
             var shopsPrice = await GetShopsPrice(userId, productId, startDate, endDate);
@@ -249,7 +285,7 @@ namespace HomeWallet_API.Logic
                 .SumAsync(),2);
         }
 
-        private async Task<double> GetAverageProductPride(int userId, int productId, DateTime startDate,
+        private async Task<double> GetAverageProductPrice(int userId, int productId, DateTime startDate,
             DateTime endDate)
         {
             return await GetProductPricesCount(userId, productId, startDate, endDate)/

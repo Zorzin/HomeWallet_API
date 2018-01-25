@@ -22,8 +22,33 @@ namespace HomeWallet_API.Logic
         {
             var start = DateTime.Parse(startDate);
             var end = DateTime.Parse(endDate);
-            var test = GetMaxAmountOfAllCategories(userId, shopId, start, end);
-            return null;
+
+            var shopSummary = new ShopSummary()
+            {
+                AverageCategoryAmountForReceipt = await GetAverageAmountOfCategories(userId,shopId,start,end),
+                AverageMoneySpentPerDay = await GetAverageMoneySpentInShopPerDay(userId,shopId,start,end),
+                AverageMoneySpentOnEachCategory = await GetAverageMoneySpentOnCategories(userId,shopId,start,end),
+                AverageProductAmountBought = await GetAverageProductsAmountBoughtInShop(userId,shopId,start,end),
+                MaxCategoryAmountForReceipt = GetMaxAmountOfAllCategories(userId,shopId,start,end),
+                MaxProductAmountBought = GetMaxProductsAmountBoughtInShop(userId,shopId,start,end),
+                MinCategoryAmountForReceipt = GetMinAmountOfAllCategories(userId,shopId,start,end),
+                MinProductAmountBought = GetMinProductsAmountBoughtInShop(userId,shopId,start,end),
+                MoneyAverageSpentAmount = await GetAvarageMoneySpentInShop(userId,shopId,start,end),
+                MoneyMaxSpentAmount = GetMaxMoneySpentInShop(userId,shopId,start,end),
+                MoneyMinSpentAmount = GetMinMoneySpentInShop(userId,shopId,start,end),
+                MoneySpentAmount = await GetTotalSpentAmount(userId,shopId,start,end),
+                ProductsBoughtAverageAmount = await GetAverageProductsBoughtInShop(userId,shopId,start,end),
+                ProductsBoughtMaxAmount = GetMaxProductsBoughtInShop(userId, shopId, start, end),
+                ProductsBoughtMinAmount = GetMinProductsBoughtInShop(userId, shopId, start, end),
+                ProductsBoughtTotalAmount = await GetTotalProductsBoughtInShop(userId,shopId,start,end),
+                TotalCategoriesAmount = await GetAmountOfAllCategories(userId,shopId,start,end),
+                TotalProductAmountBought = await GetTotalProductsAmountBoughtInShop(userId,shopId,start,end),
+                VisitAmount = await GetVisitAmount(userId,shopId,start,end),
+                MostPopularCategory = await GetMostPopularCategory(userId,shopId,start,end),
+                LeastPopularCategory = await GetLeastPopularCategory(userId,shopId,start,end)
+            };
+
+            return shopSummary;
         }
 
         private async Task<int> GetVisitAmount(int userId, int shopId, DateTime startDate, DateTime endDate)
@@ -44,7 +69,7 @@ namespace HomeWallet_API.Logic
                 .SumAsync(), 2);
         }
 
-        private double GetMaxAmountSpentInShop(int userId, int shopId, DateTime startDate, DateTime endDate)
+        private double GetMaxMoneySpentInShop(int userId, int shopId, DateTime startDate, DateTime endDate)
         {
             return Math.Round(_dbContext.ReceiptProducts
                 .Include(rp => rp.Receipt)
@@ -59,7 +84,7 @@ namespace HomeWallet_API.Logic
                 .Max(),2);
         }
 
-        private double GetMinAmountSpentInShop(int userId, int shopId, DateTime startDate, DateTime endDate)
+        private double GetMinMoneySpentInShop(int userId, int shopId, DateTime startDate, DateTime endDate)
         {
             return Math.Round(_dbContext.ReceiptProducts
                 .Include(rp => rp.Receipt)
@@ -244,7 +269,7 @@ namespace HomeWallet_API.Logic
             {
                 result.Add(new ChartData()
                 {
-                    Name = _dbHelper.GetCategoryName(category),
+                    Name = await _dbHelper.GetCategoryName(category),
                     Value = await GetMoneySpentOnCategoryInShop(userId, shopId, category, startDate, endDate) /
                             await GetHowManyTimesCategoryWasBoughtInShop(userId, shopId, category, startDate, endDate)
                 });

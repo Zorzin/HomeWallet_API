@@ -15,12 +15,14 @@ namespace HomeWallet_API.Controllers
     public class CategoriesController : Controller
     {
         private readonly DBContext _context;
-        private ICategoryHelper _categoryHelper;
+        private readonly ICategoryHelper _categoryHelper;
+        private readonly ICategorySummaryHelper _categorySummaryHelper;
 
-        public CategoriesController(DBContext context, ICategoryHelper categoryHelper)
+        public CategoriesController(DBContext context, ICategoryHelper categoryHelper, ICategorySummaryHelper categorySummaryHelper)
         {
             _context = context;
             _categoryHelper = categoryHelper;
+            _categorySummaryHelper = categorySummaryHelper;
         }
 
         // GET: api/Categories
@@ -66,6 +68,39 @@ namespace HomeWallet_API.Controllers
             }
 
             return Ok(products);
+        }
+
+        // GET: api/categories/summary/
+        [HttpGet("summary/{userId}/{categoryId}/{startDate}/{endDate}")]
+        public async Task<IActionResult> GetSummaryByDate(int userId, int categoryId, string startDate, string endDate)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return BadRequest();
+            }
+
+            var category = _context.Categories.FirstOrDefault(u => u.ID == categoryId && u.UserID == userId);
+
+            if (category == null)
+            {
+                return BadRequest();
+            }
+
+            var summary = await _categorySummaryHelper.GetCategorySummary(userId, categoryId, startDate, endDate);
+
+            if (summary == null)
+            {
+                return BadRequest();
+            }
+
+            return Ok(summary);
         }
 
         // PUT: api/Categories/1/5/name

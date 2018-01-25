@@ -16,14 +16,14 @@ namespace HomeWallet_API.Logic
             _dbContext = dbContext;
         }
 
-        public string GetShopName(int shop)
+        public async Task<string> GetShopName(int shop)
         {
-            return _dbContext.Shops.Where(s => s.ID == shop).Select(s => s.Name).FirstOrDefault();
+            return await _dbContext.Shops.Where(s => s.ID == shop).Select(s => s.Name).FirstOrDefaultAsync();
         }
 
-        public string GetCategoryName(int category)
+        public async Task<string> GetCategoryName(int category)
         {
-            return _dbContext.Categories.Where(c => c.ID == category).Select(c => c.Name).FirstOrDefault();
+            return await _dbContext.Categories.Where(c => c.ID == category).Select(c => c.Name).FirstOrDefaultAsync();
         }
 
         public int GetDaysBetweenDates(DateTime startDate, DateTime endDate)
@@ -32,21 +32,19 @@ namespace HomeWallet_API.Logic
         }
 
 
-        public double GetCheaperProductCost(int userId, DateTime startDate, DateTime endDate)
+        public async Task<double> GetCheaperProductCost(int userId, DateTime startDate, DateTime endDate)
         {
-            return Math.Round(GetProductsCost(userId, startDate, endDate).Result.Min(), 2);
+            return Math.Round((await GetProductsCost(userId, startDate, endDate)).Min(), 2);
         }
 
-        public double GetMostExpensiveProductCost(int userId, DateTime startDate, DateTime endDate)
+        public async Task<double> GetMostExpensiveProductCost(int userId, DateTime startDate, DateTime endDate)
         {
-            return Math.Round(GetProductsCost(userId, startDate, endDate).Result
-                .Max(), 2);
+            return Math.Round((await GetProductsCost(userId, startDate, endDate)).Max(), 2);
         }
 
-        public double GetAverageProductCost(int userId, DateTime startDate, DateTime endDate)
+        public async Task<double> GetAverageProductCost(int userId, DateTime startDate, DateTime endDate)
         {
-            return Math.Round(GetProductsCost(userId, startDate, endDate).Result
-                .Average(), 2);
+            return Math.Round((await GetProductsCost(userId, startDate, endDate)).Average(), 2);
         }
 
         public async Task<List<double>> GetProductsCost(int userId, DateTime startDate, DateTime endDate)
@@ -74,13 +72,13 @@ namespace HomeWallet_API.Logic
 
     public interface IDbHelper
     {
-        string GetShopName(int shop);
-        string GetCategoryName(int category);
+        Task<string> GetShopName(int shop);
+        Task<string> GetCategoryName(int category);
         int GetDaysBetweenDates(DateTime startDate, DateTime endDate);
         Task<List<double>> GetProductsCost(int userId, DateTime startDate, DateTime endDate);
-        double GetAverageProductCost(int userId, DateTime startDate, DateTime endDate);
-        double GetMostExpensiveProductCost(int userId, DateTime startDate, DateTime endDate);
-        double GetCheaperProductCost(int userId, DateTime startDate, DateTime endDate);
+        Task<double> GetAverageProductCost(int userId, DateTime startDate, DateTime endDate);
+        Task<double> GetMostExpensiveProductCost(int userId, DateTime startDate, DateTime endDate);
+        Task<double> GetCheaperProductCost(int userId, DateTime startDate, DateTime endDate);
         Task<double> GetTotalSpentBetweenDates(int userId, DateTime startDate, DateTime endDate);
     }
 }

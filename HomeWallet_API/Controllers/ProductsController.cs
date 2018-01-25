@@ -15,12 +15,14 @@ namespace HomeWallet_API.Controllers
     public class ProductsController : Controller
     {
         private readonly DBContext _context;
-        private IProductHelper _productHelper;
+        private readonly IProductHelper _productHelper;
+        private readonly IProductSummaryHelper _productSummaryHelper;
 
-        public ProductsController(DBContext context, IProductHelper productHelper)
+        public ProductsController(DBContext context, IProductHelper productHelper, IProductSummaryHelper productSummaryHelper)
         {
             _context = context;
             _productHelper = productHelper;
+            _productSummaryHelper = productSummaryHelper;
         }
 
         // GET: api/Products/1
@@ -66,6 +68,39 @@ namespace HomeWallet_API.Controllers
             }
 
             return Ok(categories);
+        }
+
+        // GET: api/products/summary/
+        [HttpGet("summary/{userId}/{productId}/{startDate}/{endDate}")]
+        public async Task<IActionResult> GetSummaryByDate(int userId, int productId, string startDate, string endDate)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return BadRequest();
+            }
+
+            var product = _context.Products.FirstOrDefault(u => u.ID == productId && u.UserID == userId);
+
+            if (product == null)
+            {
+                return BadRequest();
+            }
+
+            var summary = await _productSummaryHelper.GetProductSummary(userId, productId, startDate,endDate);
+
+            if (summary == null)
+            {
+                return BadRequest();
+            }
+
+            return Ok(summary);
         }
 
         // PUT: api/Products/1/5
