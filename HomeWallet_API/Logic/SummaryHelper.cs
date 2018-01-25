@@ -57,7 +57,7 @@ namespace HomeWallet_API.Logic
             {
                 productsInShops.Add(new ChartData()
                 {
-                    Name = _dbHelper.GetShopName(shop),
+                    Name = await _dbHelper.GetShopName(shop),
                     Value = await GetProductAmountBoughtInShop(userId, startDate, endDate, shop)
                 });
             }
@@ -72,7 +72,7 @@ namespace HomeWallet_API.Logic
             {
                 shopMoney.Add(new ChartData()
                 {
-                    Name = _dbHelper.GetShopName(shop),
+                    Name = await _dbHelper.GetShopName(shop),
                     Value = await GetMoneySpentInShop(userId, startDate, endDate, shop)
                 });
             }
@@ -87,7 +87,7 @@ namespace HomeWallet_API.Logic
             {
                 categoriesMoney.Add(new ChartData()
                 {
-                    Name = _dbHelper.GetCategoryName(category),
+                    Name = await _dbHelper.GetCategoryName(category),
                     Value = await GetMoneySpentOnCategory(userId, startDate, endDate, category)
                 });
             }

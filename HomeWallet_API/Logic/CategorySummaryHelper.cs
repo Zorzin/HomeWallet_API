@@ -41,7 +41,7 @@ namespace HomeWallet_API.Logic
             {
                 moneySpentInShops.Add(new ChartData()
                 {
-                    Name = _dbHelper.GetShopName(shop),
+                    Name = await _dbHelper.GetShopName(shop),
                     Value = await GetMoneySpentOnCategoryInShop(userId, categoryId, shop, start, end)
                 });
             }
