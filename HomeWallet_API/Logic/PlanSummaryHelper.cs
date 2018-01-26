@@ -189,7 +189,7 @@ namespace HomeWallet_API.Logic
                     rp.Receipt.UserID == userId)
                 .Select(rp => rp.ProductID)
                 .Distinct()
-                .SumAsync();
+                .CountAsync();
         }
 
         private async Task<double> GetAverageMoneySpentPerDayForPlan(int userId, DateTime startDate, DateTime endDate)

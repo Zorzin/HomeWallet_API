@@ -15,13 +15,13 @@ namespace HomeWallet_API.Logic
             _context = context;
         }
 
-        public List<Product> GetShopProducts(int shopId, int userId)
+        public async Task<List<Product>> GetShopProducts(int shopId, int userId)
         {
-            var shop = _context.Shops
+            var shop = await _context.Shops
                 .Include(s => s.Receipts)
                 .ThenInclude(r => r.ReceiptProducts)
                 .ThenInclude(rp => rp.Product)
-                .SingleOrDefault(m => m.ID == shopId);
+                .SingleOrDefaultAsync(m => m.ID == shopId);
             if (shop == null)
             {
                 return null;
@@ -45,6 +45,6 @@ namespace HomeWallet_API.Logic
 
     public interface IShopHelper
     {
-        List<Product> GetShopProducts(int shopId, int userId);
+        Task<List<Product>> GetShopProducts(int shopId, int userId);
     }
 }

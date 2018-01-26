@@ -171,14 +171,14 @@ namespace HomeWallet_API.Logic
 
         private async Task<double> GetAverageProductsBoughtInShop(int userId, int shopId, DateTime startDate, DateTime endDate)
         {
-            return (double)await GetTotalProductsBoughtInShop(userId, shopId, startDate, endDate) /
-                   await GetVisitAmount(userId, shopId, startDate, endDate);
+            return Math.Round((double)await GetTotalProductsBoughtInShop(userId, shopId, startDate, endDate) /
+                   await GetVisitAmount(userId, shopId, startDate, endDate),2);
         }
 
         private async Task<double> GetAverageProductsAmountBoughtInShop(int userId, int shopId, DateTime startDate, DateTime endDate)
         {
-            return await GetTotalProductsAmountBoughtInShop(userId, shopId, startDate, endDate) /
-                   await GetVisitAmount(userId, shopId, startDate, endDate);
+            return Math.Round(await GetTotalProductsAmountBoughtInShop(userId, shopId, startDate, endDate) /
+                   await GetVisitAmount(userId, shopId, startDate, endDate),2);
         }
 
         private async Task<int> GetTotalProductsBoughtInShop(int userId, int shopId, DateTime startDate, DateTime endDate)
@@ -292,14 +292,14 @@ namespace HomeWallet_API.Logic
 
         private async Task<double> GetHowManyTimesCategoryWasBoughtInShop(int userId, int shopId, int categoryId, DateTime startDate, DateTime endDate)
         {
-            return await _dbContext.ReceiptProducts
+            return Math.Round((double)await _dbContext.ReceiptProducts
                 .Include(rp => rp.Receipt)
                 .Include(rp => rp.Product)
                 .ThenInclude(p => p.ProductCategories)
                 .Where(rp =>
                     rp.Receipt.ShopID == shopId && rp.Receipt.UserID == userId &&
                     rp.Receipt.PurchaseDate >= startDate && rp.Receipt.PurchaseDate <= endDate && rp.Product.ProductCategories.Any(pc => pc.CategoryID == categoryId))
-                .CountAsync();
+                .CountAsync(),2);
         }
 
         private async Task<int> GetMostPopularCategory(int userId, int shopId, DateTime startDate, DateTime endDate)
@@ -341,14 +341,14 @@ namespace HomeWallet_API.Logic
 
         private async Task<double> GetAverageMoneySpentInShopPerDay(int userId, int shopId, DateTime startDate, DateTime endDate)
         {
-            return await GetTotalSpentAmount(userId, shopId, startDate, endDate) /
-                   _dbHelper.GetDaysBetweenDates(startDate, endDate);
+            return Math.Round(await GetTotalSpentAmount(userId, shopId, startDate, endDate) /
+                   _dbHelper.GetDaysBetweenDates(startDate, endDate),2);
         }
 
-        private async Task<int> GetAverageAmountOfCategories(int userId, int shopId, DateTime startDate, DateTime endDate)
+        private async Task<double> GetAverageAmountOfCategories(int userId, int shopId, DateTime startDate, DateTime endDate)
         {
-            return await GetAmountOfAllCategories(userId, shopId, startDate, endDate) /
-                   await GetVisitAmount(userId, shopId, startDate, endDate);
+            return Math.Round((double)await GetAmountOfAllCategories(userId, shopId, startDate, endDate) /
+                   await GetVisitAmount(userId, shopId, startDate, endDate),2);
         }
     }
 

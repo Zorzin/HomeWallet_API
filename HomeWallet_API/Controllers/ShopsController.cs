@@ -29,7 +29,6 @@ namespace HomeWallet_API.Controllers
         [HttpGet("{userId}")]
         public IEnumerable<Shop> GetShops(int userId)
         {
-            _shopSummaryHelper.GetShopSummary(1, 39, "2017-01-01", "2019-01-01");
             return _context.Shops.Where(s=>s.UserID == userId);
         }
 
@@ -61,7 +60,7 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var products = _shopHelper.GetShopProducts(id, userId);
+            var products = await _shopHelper.GetShopProducts(id, userId);
             
             if (products == null)
             {

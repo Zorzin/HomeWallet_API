@@ -144,7 +144,7 @@ namespace HomeWallet_API.Logic
                 result.Add(new ChartData()
                 {
                     Name = await _dbHelper.GetShopName(averagePrice.ShopId),
-                    Value = averagePrice.Price
+                    Value = Math.Round(averagePrice.Price,2)
                 });
             }
             return result;
@@ -288,8 +288,8 @@ namespace HomeWallet_API.Logic
         private async Task<double> GetAverageProductPrice(int userId, int productId, DateTime startDate,
             DateTime endDate)
         {
-            return await GetProductPricesCount(userId, productId, startDate, endDate)/
-                   await GetTimesBought(userId, productId, startDate, endDate);
+            return Math.Round(await GetProductPricesSum(userId, productId, startDate, endDate)/
+                   await GetTimesBought(userId, productId, startDate, endDate),2);
         }
 
         private async Task<List<double>> GetProductPrices(int userId, int productId, DateTime startDate,
@@ -304,7 +304,7 @@ namespace HomeWallet_API.Logic
                 .ToListAsync();
         }
 
-        private async Task<double> GetProductPricesCount(int userId, int productId, DateTime startDate,
+        private async Task<double> GetProductPricesSum(int userId, int productId, DateTime startDate,
             DateTime endDate)
         {
             return await _dbContext.ReceiptProducts
@@ -313,7 +313,7 @@ namespace HomeWallet_API.Logic
                     rp.ProductID == productId && rp.Receipt.UserID == userId && rp.Receipt.PurchaseDate >= startDate &&
                     rp.Receipt.PurchaseDate <= endDate)
                 .Select(rp => rp.Price)
-                .CountAsync();
+                .SumAsync();
         }
 
         private async Task<double> GetHighestPriceForProduct(int userId, int productId, DateTime startDate,
