@@ -22,7 +22,8 @@ namespace HomeWallet_API.Logic
         {
             var start = DateTime.Parse(startDate);
             var end = DateTime.Parse(endDate);
-
+            var lowestPriceShop = (await GetShopWithLowestPrice(userId, productId, start, end)).ShopId;
+            var highestPriceShop = (await GetShopWithHighestPrice(userId, productId, start, end)).ShopId;
             var productSummary = new ProductSummary()
             {
                 AverageAmountOnReceipt = await GetAverageBoughtAmountOfProduct(userId,productId,start,end),
@@ -30,15 +31,17 @@ namespace HomeWallet_API.Logic
                 AveragePrice = await GetAverageProductPrice(userId,productId,start,end),
                 AveragePriceInShops = await GetAveragePriceInShopsAsChartData(userId,productId,start,end),
                 MaxAmountOnReceipt = await GetMaxBoughtAmountOfProduct(userId,productId,start,end),
-                MaxPrice = (await GetProductPrices(userId,productId,start,end)).Max(),
+                MaxPrice = (await GetProductPrices(userId,productId,start,end)).DefaultIfEmpty().Max(),
                 MinAmountOnReceipt = await GetMinBoughtAmountOfProduct(userId,productId,start,end),
-                MinPrice = (await GetProductPrices(userId, productId, start, end)).Min(),
+                MinPrice = (await GetProductPrices(userId, productId, start, end)).DefaultIfEmpty().Min(),
                 PercentageAmountOfTotalMoneySpent = await GetPercentageMoneySpentOnThisProductComparedToEverything(userId,productId,start,end),
                 ShopsAmount = await GetShopsCount(userId,productId,start,end),
-                ShopWithCheapestPrice = (await GetShopWithLowestPrice(userId,productId,start,end)).ShopId,
-                ShopWithMostExpensivePrice = (await GetShopWithHighestPrice(userId, productId, start, end)).ShopId,
+                ShopWithCheapestPrice = lowestPriceShop,
+                ShopWithMostExpensivePrice = highestPriceShop,
                 TotalMoneySpent = await GetMoneySpentOnProduct(userId,productId,start,end),
-                TotalTimesBoughtAmount = await GetTimesBought(userId,productId,start,end)
+                TotalTimesBoughtAmount = await GetTimesBought(userId,productId,start,end),
+                ShopWithCheapestPriceName= await _dbHelper.GetShopName(lowestPriceShop),
+                ShopWithMostExpensivePriceName = await _dbHelper.GetShopName(highestPriceShop)
             };
             return productSummary;
         }
@@ -97,6 +100,7 @@ namespace HomeWallet_API.Logic
                 .Where(rp => rp.Receipt.UserID == userId && rp.Receipt.PurchaseDate >= startDate &&
                              rp.Receipt.PurchaseDate <= endDate && rp.ProductID == productId)
                 .Select(r => r.Amount)
+                .DefaultIfEmpty()
                 .MaxAsync(), 2);
         }
 
@@ -108,6 +112,7 @@ namespace HomeWallet_API.Logic
                 .Where(rp => rp.Receipt.UserID == userId && rp.Receipt.PurchaseDate >= startDate &&
                              rp.Receipt.PurchaseDate <= endDate && rp.ProductID == productId)
                 .Select(r => r.Amount)
+                .DefaultIfEmpty()
                 .MinAsync(), 2);
         }
 
@@ -115,7 +120,12 @@ namespace HomeWallet_API.Logic
         {
             var shopsPrice = await GetShopsPrice(userId, productId, startDate, endDate);
 
-            var maxPrice = shopsPrice.Select(s => s.Price).Max();
+            if (shopsPrice.Count == 0)
+            {
+                return new ShopPrice();
+            }
+
+            var maxPrice = shopsPrice.Select(s => s.Price).DefaultIfEmpty().Max();
             return new ShopPrice()
             {
                 Price = maxPrice,
@@ -125,6 +135,11 @@ namespace HomeWallet_API.Logic
         private async Task<ShopPrice> GetShopWithLowestPrice(int userId, int productId, DateTime startDate, DateTime endDate)
         {
             var shopsPrice = await GetShopsPrice(userId, productId, startDate, endDate);
+
+            if (shopsPrice.Count == 0)
+            {
+                return new ShopPrice();
+            }
 
             var maxPrice = shopsPrice.Select(s => s.Price).Min();
             return new ShopPrice()
@@ -174,7 +189,7 @@ namespace HomeWallet_API.Logic
 
             foreach (var shop in result)
             {
-                var shopCount = shopsPrice.Count(x => x.ShopId == shop.ShopId);
+                var shopCount = shopsPrice.DefaultIfEmpty().Count(x => x.ShopId == shop.ShopId);
                 shop.Price = shop.Price / shopCount;
             }
 

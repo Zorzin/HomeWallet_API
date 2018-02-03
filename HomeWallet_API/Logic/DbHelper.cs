@@ -68,6 +68,11 @@ namespace HomeWallet_API.Logic
                 .Select(rp => rp.Price * rp.Amount) 
                 .SumAsync(),2);
         }
+
+        public async Task<string> GetProductName(int id)
+        {
+            return await _dbContext.Products.Where(s => s.ID == id).Select(s => s.Name).FirstOrDefaultAsync();
+        }
     }
 
     public interface IDbHelper
@@ -80,5 +85,6 @@ namespace HomeWallet_API.Logic
         Task<double> GetMostExpensiveProductCost(int userId, DateTime startDate, DateTime endDate);
         Task<double> GetCheaperProductCost(int userId, DateTime startDate, DateTime endDate);
         Task<double> GetTotalSpentBetweenDates(int userId, DateTime startDate, DateTime endDate);
+        Task<string> GetProductName(int id);
     }
 }

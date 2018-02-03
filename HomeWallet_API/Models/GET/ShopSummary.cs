@@ -27,6 +27,8 @@ namespace HomeWallet_API.Models
         public double MaxProductAmountBought { get; set; }
         public double AverageProductAmountBought { get; set; }
         public int MostPopularCategory { get; set; }
+        public string MostPopularCategoryName { get; set; }
         public int LeastPopularCategory { get; set; }
+        public string LeastPopularCategoryName { get; set; }
     }
 }

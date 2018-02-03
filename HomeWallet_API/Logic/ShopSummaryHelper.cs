@@ -22,7 +22,8 @@ namespace HomeWallet_API.Logic
         {
             var start = DateTime.Parse(startDate);
             var end = DateTime.Parse(endDate);
-
+            var mostPopularCategory = await GetMostPopularCategory(userId, shopId, start, end);
+            var lestPopularCategory = await GetLeastPopularCategory(userId, shopId, start, end);
             var shopSummary = new ShopSummary()
             {
                 AverageCategoryAmountForReceipt = await GetAverageAmountOfCategories(userId,shopId,start,end),
@@ -44,8 +45,10 @@ namespace HomeWallet_API.Logic
                 TotalCategoriesAmount = await GetAmountOfAllCategories(userId,shopId,start,end),
                 TotalProductAmountBought = await GetTotalProductsAmountBoughtInShop(userId,shopId,start,end),
                 VisitAmount = await GetVisitAmount(userId,shopId,start,end),
-                MostPopularCategory = await GetMostPopularCategory(userId,shopId,start,end),
-                LeastPopularCategory = await GetLeastPopularCategory(userId,shopId,start,end)
+                MostPopularCategory = mostPopularCategory,
+                LeastPopularCategory = lestPopularCategory,
+                MostPopularCategoryName = await _dbHelper.GetCategoryName(mostPopularCategory),
+                LeastPopularCategoryName = await _dbHelper.GetCategoryName(lestPopularCategory)
             };
 
             return shopSummary;

@@ -22,14 +22,16 @@ namespace HomeWallet_API.Logic
         {
             var start = DateTime.Parse(startDate);
             var end = DateTime.Parse(endDate);
+            var mostPopularShop = await GetMostPopularShopForCategory(userId, categoryId, start, end);
 
             return new CategorySummary()
             {
                 ProductsAmount = await GetProductsCountForCategory(userId, categoryId, start, end),
                 MoneySpent = await GetMoneySpentOnCategory(userId, categoryId, start, end),
                 MoneySpentOnCategoryPerDay = await GetAvarageMoneySpentOnCategoryPerDay(userId, categoryId, start, end),
-                MostPopularShop = await GetMostPopularShopForCategory(userId, categoryId, start, end),
-                MoneySpentInShops = await GetMoneySpentInShops(userId, categoryId, start, end)
+                MostPopularShop = mostPopularShop,
+                MoneySpentInShops = await GetMoneySpentInShops(userId, categoryId, start, end),
+                MostPopularShopName = await _dbHelper.GetShopName(mostPopularShop)
             };
         }
 

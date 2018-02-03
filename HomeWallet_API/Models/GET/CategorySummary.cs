@@ -10,6 +10,7 @@ namespace HomeWallet_API.Models
         public int ProductsAmount { get; set; }
         public double MoneySpent { get; set; }
         public int MostPopularShop { get; set; }
+        public string MostPopularShopName { get; set; }
         public List<ChartData> MoneySpentInShops { get; set; }
         public double MoneySpentOnCategoryPerDay { get; set; }
     }

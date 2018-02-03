@@ -37,7 +37,10 @@ namespace HomeWallet_API.Logic
                 MostExpensiveProduct = await GetMostExpensiveProduct(userId, startDate, endDate),
                 MostPopularCategory = await GetMostPopularCategoryForPlan(userId, startDate, endDate),
                 MostPopularProduct = await GetMostPopularProductForPlan(userId, startDate, endDate),
-                ProductsBoughtAmount = await GetProductsAmountForPlan(userId, startDate, endDate)
+                ProductsBoughtAmount = await GetProductsAmountForPlan(userId, startDate, endDate),
+                MostExpensiveProductName = await _dbHelper.GetProductName(await GetMostExpensiveProduct(userId, startDate, endDate)),
+                MostPopularCategoryName = await _dbHelper.GetCategoryName(await GetMostPopularCategoryForPlan(userId, startDate, endDate)),
+                MostPopularProductName = await _dbHelper.GetProductName(await GetMostPopularProductForPlan(userId, startDate, endDate)),
             };
             return planSummary;
         }

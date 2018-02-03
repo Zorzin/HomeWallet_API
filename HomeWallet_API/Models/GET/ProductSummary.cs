@@ -15,7 +15,9 @@ namespace HomeWallet_API.Models
         public int ShopsAmount { get; set; }
         public List<ChartData> AveragePriceInShops { get; set; }
         public int ShopWithCheapestPrice { get; set; }
+        public string ShopWithCheapestPriceName { get; set; }
         public int ShopWithMostExpensivePrice { get; set; }
+        public string ShopWithMostExpensivePriceName { get; set; }
         public double AverageAmountOnReceipt { get; set; }
         public double MinAmountOnReceipt { get; set; }
         public double MaxAmountOnReceipt { get; set; }
