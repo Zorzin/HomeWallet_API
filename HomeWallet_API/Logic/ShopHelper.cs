@@ -17,28 +17,13 @@ namespace HomeWallet_API.Logic
 
         public async Task<List<Product>> GetShopProducts(int shopId, int userId)
         {
-            var shop = await _context.Shops
-                .Include(s => s.Receipts)
-                .ThenInclude(r => r.ReceiptProducts)
-                .ThenInclude(rp => rp.Product)
-                .SingleOrDefaultAsync(m => m.ID == shopId);
-            if (shop == null)
-            {
-                return null;
-            }
-            var products = new List<Product>();
-            var productsId = new List<int>();
-            foreach (var shopReceipt in shop.Receipts)
-            {
-                foreach (var shopReceiptReceiptProduct in shopReceipt.ReceiptProducts)
-                {
-                    if (!productsId.Contains(shopReceiptReceiptProduct.ProductID))
-                    {
-                        productsId.Add(shopReceiptReceiptProduct.ProductID);
-                        products.Add(shopReceiptReceiptProduct.Product);
-                    }
-                }
-            }
+            var products = await _context.ReceiptProducts
+                .Include(rp => rp.Receipt)
+                .Include(rp => rp.Product)
+                .Where(rp => rp.Receipt.ShopID == shopId && rp.Receipt.UserID == userId)
+                .Select(rp => rp.Product)
+                .Distinct()
+                .ToListAsync();
             return products;
         }
     }
