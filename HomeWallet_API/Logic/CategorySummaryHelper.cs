@@ -101,7 +101,7 @@ namespace HomeWallet_API.Logic
                 .GroupBy(s=>s)
                 .OrderByDescending(x=>x.Count())
                 .Select(x=>x.Key)
-                .FirstAsync();
+                .FirstOrDefaultAsync();
         }
 
         private async Task<List<int>> GetAllShops(int userId, int categoryId, DateTime startDate, DateTime endDate)
