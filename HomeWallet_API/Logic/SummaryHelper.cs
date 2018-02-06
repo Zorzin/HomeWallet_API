@@ -21,14 +21,30 @@ namespace HomeWallet_API.Logic
 
         public async Task<Summary> GetSummary(int userId, string startDateString, string endDateString)
         {
+            double minimumCost, maxCost, averageCost;
+
             var startDate = DateTime.Parse(startDateString);
-            var endDate = DateTime.Parse(startDateString);
+            var endDate = DateTime.Parse(endDateString);
+            if (startDate > endDate)
+            {
+                return new Summary()
+                {
+                    TotalCost = -1
+                };
+            }
             var totalMoney = await GetAllMoney(userId, startDate, endDate);
             var percentPlan = await GetPercent(userId, startDate, endDate, totalMoney);
             var productsCost = await _dbHelper.GetProductsCost(userId, startDate, endDate);
-            var minimumCost = Math.Round(productsCost.Min(),2);
-            var maxCost = Math.Round(productsCost.Max(), 2);
-            var averageCost = Math.Round(productsCost.Average(), 2);
+            if (productsCost.Count > 0)
+            {
+                minimumCost = Math.Round(productsCost.Min(), 2);
+                maxCost = Math.Round(productsCost.Max(), 2);
+                averageCost = Math.Round(productsCost.Average(), 2);
+            }
+            else
+            {
+                minimumCost = maxCost = averageCost = 0;
+            }
             var summary = new Summary()
             {
                 StartDate = startDateString,

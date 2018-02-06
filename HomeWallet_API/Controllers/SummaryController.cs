@@ -47,5 +47,31 @@ namespace HomeWallet_API.Controllers
 
             return Ok(dailySummary);
         }
+
+        // GET: api/summary/date/date
+        [HttpGet("{userId}/{startDate}/{endDate}")]
+        public async Task<IActionResult> GetSummaryByDates(int userId, string startDate, string endDate)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = _dbContext.Users.FirstOrDefault(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return BadRequest();
+            }
+            
+            var summary = await _summaryHelper.GetSummary(userId, startDate, endDate);
+
+            if (summary == null)
+            {
+                return BadRequest();
+            }
+
+            return Ok(summary);
+        }
     }
 }
