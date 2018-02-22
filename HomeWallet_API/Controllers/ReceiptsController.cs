@@ -129,8 +129,8 @@ namespace HomeWallet_API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var start =DateTime.Parse(receipt.StartDate);
-            while (start <= DateTime.Parse(receipt.EndDate))
+            var start =DateTime.Parse(receipt.StartDate).Date;
+            while (start <= DateTime.Parse(receipt.EndDate).Date)
             {
                 var tempReceipt = _productHelper.CreateReceipt(receipt.ShopId, userId, start);
                 _productHelper.CreateReceiptProducts(receipt.Products, tempReceipt.ID);

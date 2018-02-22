@@ -52,7 +52,7 @@ namespace HomeWallet_API.Logic
             {
                 ShopID = shopID,
                 UserID = userID,
-                PurchaseDate = date
+                PurchaseDate = date.Date
             };
             _context.Receipts.Add(receipt);
             _context.SaveChanges();

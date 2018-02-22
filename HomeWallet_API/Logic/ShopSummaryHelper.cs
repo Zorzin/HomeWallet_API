@@ -22,6 +22,14 @@ namespace HomeWallet_API.Logic
         {
             var start = DateTime.Parse(startDate);
             var end = DateTime.Parse(endDate);
+            var visitAmount = await GetVisitAmount(userId, shopId, start, end);
+            if (visitAmount <= 0)
+            {
+                return new ShopSummary()
+                {
+                    VisitAmount = 0
+                };
+            }
             var mostPopularCategory = await GetMostPopularCategory(userId, shopId, start, end);
             var lestPopularCategory = await GetLeastPopularCategory(userId, shopId, start, end);
             var shopSummary = new ShopSummary()
@@ -44,7 +52,7 @@ namespace HomeWallet_API.Logic
                 ProductsBoughtTotalAmount = await GetTotalProductsBoughtInShop(userId,shopId,start,end),
                 TotalCategoriesAmount = await GetAmountOfAllCategories(userId,shopId,start,end),
                 TotalProductAmountBought = await GetTotalProductsAmountBoughtInShop(userId,shopId,start,end),
-                VisitAmount = await GetVisitAmount(userId,shopId,start,end),
+                VisitAmount = visitAmount,
                 MostPopularCategory = mostPopularCategory,
                 LeastPopularCategory = lestPopularCategory,
                 MostPopularCategoryName = await _dbHelper.GetCategoryName(mostPopularCategory),
@@ -84,6 +92,7 @@ namespace HomeWallet_API.Logic
                 .Select(x => new {S = x.Sum(rp => rp.D)})
                 .ToList()
                 .Select(x=>x.S)
+                .DefaultIfEmpty()
                 .Max(),2);
         }
 
@@ -99,6 +108,7 @@ namespace HomeWallet_API.Logic
                 .Select(x => new { S = x.Sum(rp => rp.D) })
                 .ToList()
                 .Select(x => x.S)
+                .DefaultIfEmpty()
                 .Min(), 2);
         }
 
@@ -111,9 +121,10 @@ namespace HomeWallet_API.Logic
                     rp.Receipt.PurchaseDate >= startDate && rp.Receipt.PurchaseDate <= endDate)
                 .Select(rp => new {R= rp.ReceiptID,P= rp.Amount})
                 .GroupBy(rp => rp.R)
-                .Select(x => new { S = x.Max(rp => rp.P) })
+                .Select(x => new { S = x.DefaultIfEmpty().Max(rp => rp.P) })
                 .ToList()
                 .Select(x => x.S)
+                .DefaultIfEmpty()
                 .Max(), 2);
         }
 
@@ -126,9 +137,10 @@ namespace HomeWallet_API.Logic
                     rp.Receipt.PurchaseDate >= startDate && rp.Receipt.PurchaseDate <= endDate)
                 .Select(rp => new { R = rp.ReceiptID, P = rp.Amount })
                 .GroupBy(rp => rp.R)
-                .Select(x => new { S = x.Min(rp => rp.P) })
+                .Select(x => new { S = x.DefaultIfEmpty().Min(rp => rp.P) })
                 .ToList()
                 .Select(x => x.S)
+                .DefaultIfEmpty()
                 .Min(), 2);
         }
 
@@ -154,6 +166,7 @@ namespace HomeWallet_API.Logic
                 .Select(x=>new {S=x.Count()})
                 .ToList()
                 .Select(x=>x.S)
+                .DefaultIfEmpty()
                 .Max();
         }
 
@@ -169,6 +182,7 @@ namespace HomeWallet_API.Logic
                 .Select(x => new { S = x.Count() })
                 .ToList()
                 .Select(x => x.S)
+                .DefaultIfEmpty()
                 .Min();
         }
 
@@ -230,6 +244,7 @@ namespace HomeWallet_API.Logic
                 .Select(x => new { S = x.Distinct().Sum(rp=>rp.P) })
                 .ToList()
                 .Select(x => x.S)
+                .DefaultIfEmpty()
                 .Min();
         }
 
@@ -245,6 +260,7 @@ namespace HomeWallet_API.Logic
                 .Select(x => new { S = x.Distinct().Sum(rp => rp.P) })
                 .ToList()
                 .Select(x => x.S)
+                .DefaultIfEmpty()
                 .Max();
         }
 
